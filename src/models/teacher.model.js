@@ -1,0 +1,97 @@
+module.exports = (sequelize, DataTypes) => {
+	const Teacher = sequelize.define(
+		'Teacher',
+		{
+			id: {
+				type: DataTypes.UUID,
+				primaryKey: true,
+				defaultValue: DataTypes.UUIDV4,
+			},
+			firstName: {
+				type: DataTypes.STRING,
+				allowNull: false,
+			},
+			lastName: {
+				type: DataTypes.STRING,
+				allowNull: false,
+			},
+			email: {
+				type: DataTypes.STRING,
+				allowNull: false,
+				unique: true,
+				validate: {
+					isEmail: true,
+				},
+			},
+			password: {
+				type: DataTypes.STRING,
+				allowNull: false,
+			},
+			picture: {
+				type: DataTypes.STRING,
+				allowNull: false,
+			},
+			role: {
+				type: DataTypes.STRING,
+				allowNull: false,
+				defaultValue: 'teacher',
+			},
+			// levels: {
+			// 	// type: DataTypes.ARRAY(DataTypes.STRING),
+			// 	type: DataTypes.STRING,
+			// 	allowNull: false,
+			// },
+
+			phoneNumber: {
+				type: DataTypes.STRING,
+				allowNull: false,
+				validate: {
+					len: [10, 15], 
+					isNumeric: true, 
+				},
+			},
+			specialization: {
+				type: DataTypes.STRING,
+				allowNull: false,
+			},
+			graduationYear: {
+				type: DataTypes.STRING,
+				allowNull: false,
+				validate: {
+					isInt: true,
+					min: 1900,
+					max: new Date().getFullYear(), 
+				},
+			},
+			educationalQualification: {
+				type: DataTypes.STRING,
+				allowNull: false,
+			},
+			refreshToken: {
+				type: DataTypes.STRING,
+				allowNull: true,
+			},
+			isEmailVerified: {
+				type: DataTypes.BOOLEAN,
+				defaultValue: false,
+			},
+		},
+		{
+			timestamps: true,
+		},
+	);
+	Teacher.associate = function (models) {
+		Teacher.hasMany(models.Course, {
+			foreignKey: 'teacherId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
+		Teacher.hasMany(models.Student, { foreignKey: 'teacherId' ,
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',});
+		Teacher.hasMany(models.Review, { foreignKey: 'teacherId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE', });
+	};
+	return Teacher;
+};
