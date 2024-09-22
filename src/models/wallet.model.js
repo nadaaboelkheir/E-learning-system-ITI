@@ -28,13 +28,14 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
+		Wallet.hasMany(models.Transaction, {
+			foreignKey: 'walletId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
 	};
 
-	Wallet.hasMany(models.Transaction, {
-		foreignKey: 'walletId',
-		onUpdate: 'CASCADE',
-		onDelete: 'CASCADE',
-	});
+	
 
 	return Wallet;
 };
