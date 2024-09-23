@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
 			},
 			picture: {
 				type: DataTypes.STRING,
-				allowNull: false,
+				allowNull: true,
 			},
 			level: {
 				type: DataTypes.STRING,

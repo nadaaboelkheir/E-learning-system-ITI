@@ -31,10 +31,7 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false,
 			defaultValue: DataTypes.NOW,
 		},
-		createdAt: {
-			type: DataTypes.DATE,
-			allowNull: false,
-		},
+		
 	});
 	Transaction.associate = function (models) {
 		Transaction.belongsTo(models.Wallet, {

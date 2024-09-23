@@ -29,18 +29,17 @@ module.exports = (sequelize, DataTypes) => {
 			},
 			picture: {
 				type: DataTypes.STRING,
-				allowNull: false,
+				allowNull: true,
 			},
 			role: {
 				type: DataTypes.STRING,
 				allowNull: false,
 				defaultValue: 'teacher',
 			},
-			// levels: {
-			// 	// type: DataTypes.ARRAY(DataTypes.STRING),
-			// 	type: DataTypes.STRING,
-			// 	allowNull: false,
-			// },
+			levels: {
+				type: DataTypes.STRING,
+				allowNull: false,
+			},
 
 			phoneNumber: {
 				type: DataTypes.STRING,
@@ -71,10 +70,7 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: true,
 			},
-			isEmailVerified: {
-				type: DataTypes.BOOLEAN,
-				defaultValue: false,
-			},
+			
 		},
 		{
 			timestamps: true,

@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		picture: {
 			type: DataTypes.STRING,
-			allowNull: false,
+			allowNull: true,
 		},
 		role: {
 			type: DataTypes.STRING,
@@ -34,10 +34,7 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.STRING,
 			allowNull: true, 
 		},
-		isEmailVerified: {
-			type: DataTypes.BOOLEAN,
-			defaultValue: false,
-		},
+		
 	},
 		{
 			timestamps: true,

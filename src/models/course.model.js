@@ -46,6 +46,7 @@ module.exports = (sequelize, DataTypes) => {
 		Course.hasMany(models.Lesson, { foreignKey: 'courseId',onUpdate :"CASCADE",onDelete :"CASCADE"  });
 		Course.hasMany(models.Review, { foreignKey: 'courseId',onUpdate :"CASCADE",onDelete :"CASCADE" });
 		Course.hasMany(models.Subscription, { foreignKey: 'courseId',onUpdate :"CASCADE",onDelete :"CASCADE" });
+		
 	};
 
 	return Course;
