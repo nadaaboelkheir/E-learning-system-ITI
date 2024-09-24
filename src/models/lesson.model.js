@@ -18,6 +18,10 @@ module.exports = (sequelize, DataTypes) => {
 			courseId: {
 				type: DataTypes.UUID,
 				allowNull: false,
+				references: {
+					model: 'Courses',
+					key: 'id',
+				},
 			},
 		},
 		{
