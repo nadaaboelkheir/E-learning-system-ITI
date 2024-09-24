@@ -1,13 +1,39 @@
-// server.js
+// require important modules
 const express = require('express');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
+
+// create express app
 const app = express();
-const db = require('./models');
 const { PORT } = require('./utils/env');
 
-// Middleware to parse incoming requests
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// configure rate limiter
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // limit each IP to 100 requests per windowMs
+});
 
+// require database connection
+const db = require('./models');
+
+// Middleware to parse incoming requests
+// configure app to use bodyParser (to receive post data from clients)
+// this will let us get the data from a POST request
+app.use(bodyParser.urlencoded({ extended: true, limit: '100mb' }));
+app.use(bodyParser.json({ limit: '100mb' }));
+app.use(cookieParser());
+app.use(limiter); // apply rate limiter to all requests
+
+// import routes
+const authRoutes = require('./routers/auth.routes');
+const adminRoutes = require('./routers/admin.routes');
+const userRoutes = require('./routers/user.routes');
+
+// use routes
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/user', userRoutes);
 
 // Sync Sequelize models and start the server
 db.sequelize

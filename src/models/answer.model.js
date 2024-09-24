@@ -19,7 +19,6 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.UUID,
 				allowNull: false,
 				references: { model: 'Questions', key: 'id' },
-               
 			},
 		},
 		{
@@ -28,7 +27,11 @@ module.exports = (sequelize, DataTypes) => {
 	);
 
 	Answer.associate = function (models) {
-		Answer.belongsTo(models.Question, { foreignKey: 'questionId',onUpdate :"CASCADE",onDelete :"CASCADE"  });
+		Answer.belongsTo(models.Question, {
+			foreignKey: 'questionId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
 	};
 
 	return Answer;

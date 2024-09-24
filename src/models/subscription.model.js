@@ -9,24 +9,24 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.DATE,
 			allowNull: false,
 			validate: {
-			  isAfterToday(value) {
-				if (new Date(value) <= new Date()) {
-				  throw new Error('Start date must be in the future.');
-				}
-			  },
+				isAfterToday(value) {
+					if (new Date(value) <= new Date()) {
+						throw new Error('Start date must be in the future.');
+					}
+				},
 			},
-		  },
-		  endDate: {
+		},
+		endDate: {
 			type: DataTypes.DATE,
 			allowNull: false,
 			validate: {
-			  isAfterStart(value) {
-				if (new Date(value) <= new Date(this.startDate)) {
-				  throw new Error('End date must be after start date.');
-				}
-			  },
+				isAfterStart(value) {
+					if (new Date(value) <= new Date(this.startDate)) {
+						throw new Error('End date must be after start date.');
+					}
+				},
 			},
-		  },
+		},
 		subscriptionStatus: {
 			type: DataTypes.ENUM('active', 'expired'),
 			defaultValue: 'active',
@@ -39,9 +39,9 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.UUID,
 			allowNull: false,
 			references: {
-                model: 'Students',
-                key: 'id',
-            },
+				model: 'Students',
+				key: 'id',
+			},
 		},
 		courseId: {
 			type: DataTypes.UUID,
@@ -53,9 +53,16 @@ module.exports = (sequelize, DataTypes) => {
 		},
 	});
 	Subscription.associate = function (models) {
-
-		Subscription.belongsTo(models.Student, { foreignKey: 'studentId',onUpdate :"CASCADE",onDelete :"CASCADE" });
-		Subscription.belongsTo(models.Course, { foreignKey: 'courseId',onUpdate :"CASCADE",onDelete :"CASCADE" });
+		Subscription.belongsTo(models.Student, {
+			foreignKey: 'studentId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
+		Subscription.belongsTo(models.Course, {
+			foreignKey: 'courseId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
 	};
 
 	return Subscription;

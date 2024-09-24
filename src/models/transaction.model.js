@@ -18,20 +18,15 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.UUID,
 			allowNull: false,
 			references: {
-                model: 'Wallets',
-                key: 'id',
-            },
-			 
-
-
-
+				model: 'Wallets',
+				key: 'id',
+			},
 		},
 		transactionDate: {
 			type: DataTypes.DATE,
 			allowNull: false,
 			defaultValue: DataTypes.NOW,
 		},
-		
 	});
 	Transaction.associate = function (models) {
 		Transaction.belongsTo(models.Wallet, {

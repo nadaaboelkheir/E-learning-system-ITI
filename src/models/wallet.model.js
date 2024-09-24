@@ -35,7 +35,5 @@ module.exports = (sequelize, DataTypes) => {
 		});
 	};
 
-	
-
 	return Wallet;
 };

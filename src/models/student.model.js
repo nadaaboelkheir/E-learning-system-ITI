@@ -44,16 +44,16 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: false,
 				validate: {
-					len: [10, 15], 
-					isNumeric: true, 
+					len: [10, 15],
+					isNumeric: true,
 				},
 			},
 			parentPhoneNumber: {
 				type: DataTypes.STRING,
 				allowNull: false,
 				validate: {
-					len: [10, 15], 
-					isNumeric: true, 
+					len: [10, 15],
+					isNumeric: true,
 				},
 			},
 			role: {
@@ -69,20 +69,42 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.BOOLEAN,
 				defaultValue: false,
 			},
+			walletId: {
+				type: DataTypes.UUID,
+				allowNull: true,
+			},
 		},
 		{
 			timestamps: true,
 		},
 	);
 	Student.associate = function (models) {
-		Student.hasMany(models.Course, { foreignKey: 'studentId',onUpdate :"CASCADE",onDelete :"CASCADE" });
-		Student.hasMany(models.Transaction, { foreignKey: 'studentId',onUpdate :"CASCADE",onDelete :"CASCADE" });
-		Student.hasMany(models.Review, { foreignKey: 'studentId',onUpdate :"CASCADE",onDelete :"CASCADE" });
-		Student.belongsTo(models.Wallet, { foreignKey: 'studentId' ,onUpdate :"CASCADE",onDelete :"CASCADE"});
-		Student.hasMany(models.Subscription, { foreignKey: 'studentId',onUpdate :"CASCADE",onDelete :"CASCADE" });
+		Student.hasMany(models.Course, {
+			foreignKey: 'studentId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
+		Student.hasMany(models.Transaction, {
+			foreignKey: 'studentId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
+		Student.hasMany(models.Review, {
+			foreignKey: 'studentId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
+		Student.belongsTo(models.Wallet, {
+			foreignKey: 'studentId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
+		Student.hasMany(models.Subscription, {
+			foreignKey: 'studentId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
 		// Student.hasMany(models.Marks, { foreignKey:'studentId' });
-
-
 	};
 
 	return Student;
