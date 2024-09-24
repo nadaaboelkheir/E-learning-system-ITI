@@ -45,8 +45,8 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: false,
 				validate: {
-					len: [10, 15], 
-					isNumeric: true, 
+					len: [10, 15],
+					isNumeric: true,
 				},
 			},
 			specialization: {
@@ -59,7 +59,7 @@ module.exports = (sequelize, DataTypes) => {
 				validate: {
 					isInt: true,
 					min: 1900,
-					max: new Date().getFullYear(), 
+					max: new Date().getFullYear(),
 				},
 			},
 			educationalQualification: {
@@ -70,7 +70,6 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: true,
 			},
-			
 		},
 		{
 			timestamps: true,
@@ -82,12 +81,11 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
-		Teacher.hasMany(models.Student, { foreignKey: 'teacherId' ,
+		Teacher.hasMany(models.Review, {
+			foreignKey: 'teacherId',
 			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',});
-		Teacher.hasMany(models.Review, { foreignKey: 'teacherId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE', });
+			onDelete: 'CASCADE',
+		});
 	};
 	return Teacher;
 };
