@@ -94,17 +94,16 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
-		Student.belongsTo(models.Wallet, {
-			foreignKey: 'studentId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-		});
 		Student.hasMany(models.Subscription, {
 			foreignKey: 'studentId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
-		// Student.hasMany(models.Marks, { foreignKey:'studentId' });
+		Student.hasMany(models.Marks, {
+			foreignKey: 'studentId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
 	};
 
 	return Student;

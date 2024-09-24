@@ -37,7 +37,7 @@ app.use('/api/user', userRoutes);
 
 // Sync Sequelize models and start the server
 db.sequelize
-	.sync()
+	.sync({ force: false })
 	.then(() => {
 		app.listen(PORT, () => {
 			console.log(`Server is running on port ${PORT}`);

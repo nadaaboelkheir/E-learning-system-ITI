@@ -11,19 +11,11 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.FLOAT,
 				allowNull: false,
 			},
-			quizId: {
+			questionId: {
 				type: DataTypes.UUID,
 				allowNull: false,
 				references: {
-					model: 'Quizzes',
-					key: 'id',
-				},
-			},
-			studentId: {
-				type: DataTypes.UUID,
-				allowNull: false,
-				references: {
-					model: 'Students',
+					model: 'Questions',
 					key: 'id',
 				},
 			},
@@ -33,13 +25,8 @@ module.exports = (sequelize, DataTypes) => {
 		},
 	);
 	Marks.associate = function (models) {
-		Marks.belongsTo(models.Quiz, {
-			foreignKey: 'quizId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-		});
-		Marks.belongsTo(models.Student, {
-			foreignKey: 'studentId',
+		Marks.belongsTo(models.Question, {
+			foreignKey: 'questionId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
