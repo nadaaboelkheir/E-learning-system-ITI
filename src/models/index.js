@@ -14,7 +14,11 @@ if (config.use_env_variable) {
 		config.database,
 		config.username,
 		config.password,
-		config,
+		{
+			host: config.host,
+			port: config.port,
+			dialect: config.dialect,
+		},
 	);
 }
 

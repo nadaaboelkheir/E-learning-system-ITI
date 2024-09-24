@@ -3,6 +3,7 @@ const {
 	DB_USERNAME,
 	DB_PASSWORD,
 	DB_HOST,
+	DB_PORT,
 } = require('../utils/env.js');
 module.exports = {
 	development: {
@@ -10,6 +11,7 @@ module.exports = {
 		password: DB_PASSWORD || '',
 		database: DB_DATABASE || 'e-learning',
 		host: DB_HOST || '127.0.0.1',
+		port: DB_PORT || 3306,
 		dialect: 'mysql',
 	},
 	test: {
