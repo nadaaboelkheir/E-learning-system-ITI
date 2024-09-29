@@ -1,4 +1,4 @@
-const { Admin } = require('../models');
+const { Admin,  Wallet } = require('../models');
 const bcrypt = require('bcryptjs');
 
 const adminSignup = async (req, res) => {
@@ -20,7 +20,14 @@ const adminSignup = async (req, res) => {
 			email,
 			password: hashedPassword,
 		});
+		const wallet = await Wallet.create({
+			balance: 0,
+			walletableId: admin.id,
+			walletableType: 'Admin',
+		});
 
+		await newTeacher.update({ walletId: wallet.id });
+		
 		res.status(201).json({
 			message: 'Signup successful.',
 			data: admin,

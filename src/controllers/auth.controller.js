@@ -40,7 +40,8 @@ const registerStudent = async (req, res) => {
 
 		const wallet = await Wallet.create({
 			balance: 0,
-			studentID: newStudent.id,
+			walletableId: newStudent.id,
+			walletableType: 'Student',
 		});
 
 		await newStudent.update({ walletId: wallet.id });
@@ -95,6 +96,13 @@ const createTeacherByAdmin = async (req, res) => {
 			graduationYear,
 			educationalQualification,
 		});
+		const wallet = await Wallet.create({
+			balance: 0,
+			walletableId: newTeacher.id,
+			walletableType: 'Teacher',
+		});
+
+		await newTeacher.update({ walletId: wallet.id });
 
 		return res.status(201).json({
 			message: 'تم تسجيل المدرس بنجاح',
