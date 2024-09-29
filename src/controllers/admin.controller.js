@@ -1,4 +1,4 @@
-const { Admin,  Wallet } = require('../models');
+const { Admin, Wallet, Level, Student, Teacher } = require('../models');
 const bcrypt = require('bcryptjs');
 
 const adminSignup = async (req, res) => {
@@ -27,7 +27,7 @@ const adminSignup = async (req, res) => {
 		});
 
 		await newTeacher.update({ walletId: wallet.id });
-		
+
 		res.status(201).json({
 			message: 'Signup successful.',
 			data: admin,
@@ -38,4 +38,49 @@ const adminSignup = async (req, res) => {
 	}
 };
 
-module.exports = { adminSignup };
+const adminCreateLevel = async (req, res) => {
+	const { title } = req.body;
+	try {
+		if (req.role !== 'admin') {
+			return res
+				.status(401)
+				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
+
+		const existingLevel = await Level.findOne({ where: { title } });
+		if (existingLevel) {
+			return res.status(400).json({ error: 'المستوى موجود بالفعل' });
+		}
+
+		const level = await Level.create({ title });
+		res.status(201).json({
+			message: 'تم انشاء المستوى بنجاح',
+			data: level,
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+const adminDeleteUser = async (req, res) => {
+	const { userId } = req.params;
+	try {
+		if (req.role !== 'admin') {
+			return res
+				.status(401)
+				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
+		const student = await Student.findByPk(userId);
+		const teacher = await Teacher.findByPk(userId);
+		const user = student || teacher;
+		if (!user) {
+			return res.status(404).json({ error: 'المستخدم غير موجود' });
+		}
+		await user.destroy();
+		res.status(200).json({ message: 'تم حذف المستخدم بنجاح' });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+module.exports = { adminSignup, adminCreateLevel, adminDeleteUser };

@@ -29,12 +29,18 @@ app.use(limiter); // apply rate limiter to all requests
 const authRoutes = require('./routers/auth.routes');
 const adminRoutes = require('./routers/admin.routes');
 const userRoutes = require('./routers/user.routes');
+const courseRoutes = require('./routers/course.routes');
+const levelRoutes = require('./routers/level.routes');
+const quizRoutes = require('./routers/quiz.routes');
 const paymentRoutes = require('./routers/payment.routes');
 
 // use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/course', courseRoutes);
+app.use('/api/level', levelRoutes);
+app.use('/api/quiz', quizRoutes);
 
 app.use('/api/payment', paymentRoutes);
 

@@ -35,7 +35,7 @@ const registerStudent = async (req, res) => {
 			nationalID,
 			phoneNumber,
 			parentPhoneNumber,
-			//   verificationCode,
+			// verificationCode,
 		});
 
 		const wallet = await Wallet.create({
@@ -46,7 +46,7 @@ const registerStudent = async (req, res) => {
 
 		await newStudent.update({ walletId: wallet.id });
 
-		// await sendVerificationEmail(studentEmail, verificationCode);
+		// await sendVerificationEmail(email, verificationCode);
 		return res.status(201).json({
 			message: 'برجاء التحقق من بريدك الالكتروني  لاكمال التسجيل',
 			data: newStudent,

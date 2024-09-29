@@ -1,5 +1,6 @@
 const { Student, Teacher, Admin } = require('../models');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const getCurrentUser = async (req, res) => {
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
@@ -135,9 +136,81 @@ const getUserById = async (req, res) => {
 	}
 };
 
+const getStudentByNationalId = async (req, res) => {
+	const { nationalId } = req.params;
+	try {
+		const student = await Student.findOne({ where: { nationalId } });
+		if (student) {
+			const {
+				password,
+				createdAt,
+				updatedAt,
+				refreshToken,
+				...safeStudent
+			} = student.dataValues;
+			return res.status(200).json(safeStudent);
+		}
+		return res.status(404).json({ message: 'هذا الطالب غير موجود' });
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const resetPassword = async (req, res) => {
+	const { oldPassword, newPassword } = req.body;
+	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
+
+	try {
+		const user =
+			(await Student.findByPk(userId)) ||
+			(await Teacher.findByPk(userId)) ||
+			(await Admin.findByPk(userId));
+		if (!user) {
+			return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
+		}
+		const isMatch = await bcrypt.compare(oldPassword, user.password);
+		if (!isMatch) {
+			return res
+				.status(401)
+				.json({ error: 'كلمة المرور القديمة غير صحيحة' });
+		}
+		const hashedPassword = await bcrypt.hash(newPassword, 10);
+		await user.update({ password: hashedPassword });
+		return res.status(200).json({ message: 'تم تغيير كلمة المرور بنجاح' });
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const forgetPassword = async (req, res) => {
+	const { email } = req.body;
+	try {
+		const user =
+			(await Student.findOne({ where: { email } })) ||
+			(await Teacher.findOne({ where: { email } })) ||
+			(await Admin.findOne({ where: { email } }));
+		if (!user) {
+			return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
+		}
+		const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+			expiresIn: '1h',
+		});
+		const url = `http://localhost:3000/reset-password?token=${token}`;
+		sendEmail(user.email, 'Reset Password', url);
+		return res
+			.status(200)
+			.json({ message: 'تم ارسال رابط استعادة كلمة المرور بنجاح' });
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
 module.exports = {
 	updateUserProfile,
 	getCurrentUser,
 	getAllUsers,
 	getUserById,
+	getStudentByNationalId,
+	resetPassword,
+	forgetPassword,
 };
