@@ -29,11 +29,12 @@ app.use(limiter); // apply rate limiter to all requests
 const authRoutes = require('./routers/auth.routes');
 const adminRoutes = require('./routers/admin.routes');
 const userRoutes = require('./routers/user.routes');
-
+const aboutRoutes = require('./routers/about.routes');
 // use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/about-us', aboutRoutes);
 
 // Sync Sequelize models and start the server
 db.sequelize
