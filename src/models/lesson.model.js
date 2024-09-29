@@ -15,11 +15,11 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: false,
 			},
-			courseId: {
+			sectionId: {
 				type: DataTypes.UUID,
-				allowNull: false,
+				allowNull: true,
 				references: {
-					model: 'Courses',
+					model: 'Sections',
 					key: 'id',
 				},
 			},
@@ -39,11 +39,7 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
-		Lesson.hasMany(models.Quiz, {
-			foreignKey: 'lessonId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-		});
+		
 		Lesson.hasMany(models.Video, {
 			foreignKey: 'lessonId',
 			onUpdate: 'CASCADE',

@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
 
 			courseId: {
 				type: DataTypes.UUID,
-				allowNull: false,
+				allowNull: true,
 				references: {
 					model: 'Courses',
 					key: 'id',
@@ -29,6 +29,16 @@ module.exports = (sequelize, DataTypes) => {
 	Section.associate = function (models) {
 		Section.belongsTo(models.Course, {
 			foreignKey: 'courseId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
+		Section.hasMany(models.Quiz, {
+			foreignKey: 'sectionId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
+		Section.hasMany(models.Lesson, {
+			foreignKey: 'sectionId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});

@@ -36,12 +36,25 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: true,
 			},
+			walletId: {
+				type: DataTypes.UUID,
+				allowNull: true,
+			},
 		},
 		{
 			timestamps: true,
 		},
 	);
-	Admin.associate = function (models) {};
+	Admin.associate = function (models) {
+		Admin.hasOne(models.Wallet, {
+			foreignKey: 'walletableId',
+			constraints: false,
+			scope: {
+				walletableType: 'Admin',
+			},
+			as: 'wallet',
+		});
+	};
 
 	return Admin;
 };

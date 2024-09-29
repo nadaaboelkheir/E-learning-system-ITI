@@ -12,26 +12,35 @@ module.exports = (sequelize, DataTypes) => {
 				allowNull: false,
 				defaultValue: 0.0,
 			},
-			studentID: {
+			walletableId: {
 				type: DataTypes.UUID,
 				allowNull: false,
-				references: { model: 'Students', key: 'id' },
+			},
+			walletableType: {
+				type: DataTypes.STRING,
+				allowNull: false,
 			},
 		},
 		{
 			timestamps: true,
 		},
 	);
+
 	Wallet.associate = function (models) {
 		Wallet.belongsTo(models.Student, {
-			foreignKey: 'studentID',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
+			foreignKey: 'walletableId',
+			constraints: false,
+			as: 'studentWallet',  
 		});
-		Wallet.hasMany(models.Transaction, {
-			foreignKey: 'walletId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
+		Wallet.belongsTo(models.Teacher, {
+			foreignKey: 'walletableId',
+			constraints: false,
+			as: 'teacherWallet',  
+		});
+		Wallet.belongsTo(models.Admin, {
+			foreignKey: 'walletableId',
+			constraints: false,
+			as: 'adminWallet', 
 		});
 	};
 

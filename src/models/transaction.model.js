@@ -10,9 +10,14 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false,
 		},
 		type: {
-			type: DataTypes.STRING,
+			type: DataTypes.ENUM('pending', 'completed', 'failed'),
 			allowNull: false,
 			defaultValue: 'pending',
+		},
+		currency: {
+			type: DataTypes.STRING,
+			allowNull: false,
+			defaultValue: 'EGP',
 		},
 		walletId: {
 			type: DataTypes.UUID,

@@ -70,6 +70,10 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: true,
 			},
+			walletId: { 
+				type: DataTypes.UUID,
+				allowNull: true,
+			},
 		},
 		{
 			timestamps: true,
@@ -85,6 +89,14 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: 'teacherId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+		});
+		Teacher.hasOne(models.Wallet, {
+			foreignKey: 'walletableId',
+			constraints: false,
+			scope: {
+				walletableType: 'Teacher',
+			},
+			as: 'wallet',  // Alias for teacher wallet
 		});
 	};
 	return Teacher;

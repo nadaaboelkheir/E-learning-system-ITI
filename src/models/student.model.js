@@ -104,6 +104,14 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
+		Student.hasOne(models.Wallet, {
+			foreignKey: 'walletableId',
+			constraints: false,
+			scope: {
+				walletableType: 'Student',
+			},
+			as: 'wallet',  
+		});
 	};
 
 	return Student;

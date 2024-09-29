@@ -15,10 +15,10 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: false,
 			},
-			lessonId: {
+			sectionId: {
 				type: DataTypes.UUID,
 				allowNull: false,
-				references: { model: 'Lessons', key: 'id' },
+				references: { model: 'Sections', key: 'id' },
 			},
 		},
 		{
@@ -27,8 +27,8 @@ module.exports = (sequelize, DataTypes) => {
 	);
 
 	Quiz.associate = function (models) {
-		Quiz.belongsTo(models.Lesson, {
-			foreignKey: 'lessonId',
+		Quiz.belongsTo(models.Section, {
+			foreignKey: 'sectionId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
