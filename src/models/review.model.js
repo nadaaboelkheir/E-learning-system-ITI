@@ -27,22 +27,7 @@ module.exports = (sequelize, DataTypes) => {
 					key: 'id',
 				},
 			},
-			lessonId: {
-				type: DataTypes.UUID,
-				allowNull: false,
-				references: {
-					model: 'Lessons',
-					key: 'id',
-				},
-			},
 
-			//    teacherId: {
-			// 				type: DataTypes.UUID,
-			// 				references: {
-			// 					model: 'Teachers',
-			// 					key: 'id',
-			// 				},
-			// 			},
 			courseId: {
 				type: DataTypes.UUID,
 				references: {
@@ -61,11 +46,7 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
-		Review.belongsTo(models.Lesson, {
-			foreignKey: 'lessonId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-		});
+
 		Review.belongsTo(models.Course, {
 			foreignKey: 'courseId',
 			onUpdate: 'CASCADE',

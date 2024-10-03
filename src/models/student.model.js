@@ -79,10 +79,10 @@ module.exports = (sequelize, DataTypes) => {
 		},
 	);
 	Student.associate = function (models) {
-		Student.hasMany(models.Course, {
+		Student.belongsToMany(models.Course, {
+			through: models.Enrollment,
 			foreignKey: 'studentId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
+			as: 'courses',
 		});
 		Student.hasMany(models.Transaction, {
 			foreignKey: 'studentId',
@@ -99,11 +99,7 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
-		Student.hasMany(models.Marks, {
-			foreignKey: 'studentId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-		});
+		
 		Student.hasOne(models.Wallet, {
 			foreignKey: 'walletableId',
 			constraints: false,

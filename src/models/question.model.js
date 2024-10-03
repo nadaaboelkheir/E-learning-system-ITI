@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
-		Question.hasOne(models.Answer, {
+		Question.hasMany(models.Answer, {
 			foreignKey: 'questionId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
