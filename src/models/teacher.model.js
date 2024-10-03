@@ -80,18 +80,14 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
-		Teacher.hasMany(models.Review, {
-			foreignKey: 'teacherId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-		});
+		
 		Teacher.hasOne(models.Wallet, {
 			foreignKey: 'walletableId',
 			constraints: false,
 			scope: {
 				walletableType: 'Teacher',
 			},
-			as: 'wallet', // Alias for teacher wallet
+			as: 'wallet', 
 		});
 	};
 	return Teacher;

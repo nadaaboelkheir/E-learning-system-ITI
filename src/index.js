@@ -3,10 +3,12 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const { PORT } = require('./utils/env');
+const cors = require('cors');
+const db = require('./models');
 
 // create express app
 const app = express();
-const { PORT } = require('./utils/env');
 
 // configure rate limiter
 const limiter = rateLimit({
@@ -14,18 +16,20 @@ const limiter = rateLimit({
 	max: 100, // limit each IP to 100 requests per windowMs
 });
 
-// require database connection
-const db = require('./models');
-
 // Middleware to parse incoming requests
 // configure app to use bodyParser (to receive post data from clients)
 // this will let us get the data from a POST request
 app.use(bodyParser.urlencoded({ extended: true, limit: '100mb' }));
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(cookieParser());
-app.use(limiter); // apply rate limiter to all requests
+app.use(limiter);
+app.use(
+	cors({
+		origin: 'http://localhost:5173',
+		credentials: true,
+	}),
+);
 
-// import routes
 const authRoutes = require('./routers/auth.routes');
 const adminRoutes = require('./routers/admin.routes');
 const userRoutes = require('./routers/user.routes');
