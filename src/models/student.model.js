@@ -31,10 +31,22 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: true,
 			},
-			level: {
-				type: DataTypes.STRING,
+			levelId: {
+				type: DataTypes.UUID,
 				allowNull: false,
+				references: {
+					model: 'Levels',
+					key: 'id',
+				},
 			},
+			// otp: {
+			// 	type: DataTypes.STRING,
+			// 	allowNull: true,
+			// },
+			// otpExpiry: {
+			// 	type: DataTypes.DATE,
+			// 	allowNull: true,
+			// },
 			nationalID: {
 				type: DataTypes.STRING,
 				allowNull: false,
@@ -110,7 +122,12 @@ module.exports = (sequelize, DataTypes) => {
 			scope: {
 				walletableType: 'Student',
 			},
-			as: 'wallet',  
+			as: 'wallet',
+		});
+		Student.belongsTo(models.Level, {
+			foreignKey: 'levelId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
 		});
 	};
 

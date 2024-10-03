@@ -410,7 +410,7 @@ const getAllCourses = async (req, res) => {
 		if (!courses || courses.length === 0) {
 			return res.status(404).json({ error: 'لا يوجد دورات' });
 		}
-		return res.status(200).json({ data: courses });
+		return res.status(200).json({ count: courses.length, data: courses });
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}

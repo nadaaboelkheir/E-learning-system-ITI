@@ -26,6 +26,20 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
+
+		Level.hasMany(models.Student, {
+			foreignKey: 'levelId',
+			as: 'students',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
+
+		Level.hasMany(models.Teacher, {
+			foreignKey: 'levelId',
+			as: 'teachers',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
 	};
 
 	return Level;

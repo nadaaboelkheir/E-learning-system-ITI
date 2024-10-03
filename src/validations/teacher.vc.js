@@ -19,7 +19,6 @@ const teacherValidationRules = () => {
 			.withMessage(
 				'يجب ان يكون الرقم السري الذي تم ادخاله مكون من 8 ارقام ويجب ان يحتوي علي حروف كبيرة وصغيرة',
 			),
-		body('levels').notEmpty().withMessage('برجاء اختيار المستوي'),
 		body('phoneNumber')
 			.isLength({ min: 11, max: 11 })
 			.withMessage('يرجي ادخال رقم هاتف صحيح')

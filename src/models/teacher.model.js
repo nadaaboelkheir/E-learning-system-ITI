@@ -36,11 +36,6 @@ module.exports = (sequelize, DataTypes) => {
 				allowNull: false,
 				defaultValue: 'teacher',
 			},
-			levels: {
-				type: DataTypes.STRING,
-				allowNull: false,
-			},
-
 			phoneNumber: {
 				type: DataTypes.STRING,
 				allowNull: false,
@@ -70,7 +65,7 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: true,
 			},
-			walletId: { 
+			walletId: {
 				type: DataTypes.UUID,
 				allowNull: true,
 			},
@@ -96,7 +91,7 @@ module.exports = (sequelize, DataTypes) => {
 			scope: {
 				walletableType: 'Teacher',
 			},
-			as: 'wallet',  // Alias for teacher wallet
+			as: 'wallet', // Alias for teacher wallet
 		});
 	};
 	return Teacher;

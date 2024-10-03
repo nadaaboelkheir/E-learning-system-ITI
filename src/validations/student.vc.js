@@ -34,7 +34,7 @@ const studentValidationRules = () => {
 			.withMessage('يرجي ادخال رقم هاتف صحيح')
 			.matches(/^01[0,1,2,5][0-9]{8}$/)
 			.withMessage('رقم هاتف الاب يجب ان يبدأ بـ 010, 011, 012, 015'),
-		body('level')
+		body('levelId')
 			.trim()
 			.notEmpty()
 			.withMessage('يرجي اختيار السنة الدراسية'),

@@ -54,6 +54,12 @@ module.exports = (sequelize, DataTypes) => {
 			},
 			as: 'wallet',
 		});
+
+		Admin.hasMany(models.Event, {
+			foreignKey: 'adminId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
 	};
 
 	return Admin;
