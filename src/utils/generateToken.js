@@ -1,13 +1,13 @@
 const jwt = require('jsonwebtoken');
 const { Admin, Student, Teacher } = require('../models');
-
+const {JWT_SECRET,JWT_REFRESH_SECRET}=require('../utils/env')
 const generateTokenAndSetCookie = async (userId, role, res) => {
-	const accessToken = jwt.sign({ id: userId, role }, process.env.JWT_SECRET, {
+	const accessToken = jwt.sign({ id: userId, role }, JWT_SECRET, {
 		expiresIn: '1h',
 	});
 	const refreshToken = jwt.sign(
 		{ id: userId },
-		process.env.JWT_REFRESH_SECRET,
+		JWT_REFRESH_SECRET,
 		{ expiresIn: '7d' },
 	);
 
@@ -50,7 +50,7 @@ const refreshAccessToken = async (req, res) => {
 	try {
 		const decoded = jwt.verify(
 			refreshToken,
-			process.env.JWT_REFRESH_SECRET,
+			JWT_REFRESH_SECRET,
 		);
 		const userId = decoded.id;
 		const role = decoded.role;
@@ -72,8 +72,7 @@ const refreshAccessToken = async (req, res) => {
 		// Generate new access token
 		const newAccessToken = jwt.sign(
 			{ id: decoded.id, role: decoded.role },
-			process.env.JWT_SECRET,
-			{
+			JWT_SECRET,			{
 				expiresIn: '1h',
 			},
 		);
