@@ -32,10 +32,8 @@ const adminSignup = async (req, res) => {
 
 		res.status(201).json({
 			message: 'تم التسجيل بنجاح',
-			data: admin,
 		});
 	} catch (error) {
-		console.error('Error in signup:', error);
 		res.status(500).json({ error: error.message });
 	}
 };
@@ -57,7 +55,6 @@ const adminCreateLevel = async (req, res) => {
 		const level = await Level.create({ title });
 		res.status(201).json({
 			message: 'تم انشاء المستوى بنجاح',
-			data: level,
 		});
 	} catch (error) {
 		res.status(500).json({ error: error.message });
@@ -157,7 +154,6 @@ const adminAddNewEvent = async (req, res) => {
 		});
 		res.status(201).json({
 			message: 'تم انشاء الحدث بنجاح',
-			data: event,
 		});
 	} catch (error) {
 		res.status(500).json({ error: error.message });

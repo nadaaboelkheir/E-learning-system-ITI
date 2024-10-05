@@ -39,14 +39,6 @@ module.exports = (sequelize, DataTypes) => {
 					key: 'id',
 				},
 			},
-			// otp: {
-			// 	type: DataTypes.STRING,
-			// 	allowNull: true,
-			// },
-			// otpExpiry: {
-			// 	type: DataTypes.DATE,
-			// 	allowNull: true,
-			// },
 			nationalID: {
 				type: DataTypes.STRING,
 				allowNull: false,
@@ -111,7 +103,7 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
-		
+
 		Student.hasOne(models.Wallet, {
 			foreignKey: 'walletableId',
 			constraints: false,

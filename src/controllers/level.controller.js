@@ -2,7 +2,9 @@ const { Level, Student } = require('../models');
 
 const getAllLevels = async (req, res) => {
 	try {
-		const levels = await Level.findAll();
+		const levels = await Level.findAll({
+			attributes: ['id', 'title'],
+		});
 		if (!levels || levels.length === 0) {
 			return res.status(404).json({ error: 'لا يوجد مستويات' });
 		}
@@ -39,7 +41,7 @@ const getStudentsInLevel = async (req, res) => {
 		if (!level) {
 			return res.status(404).json({ error: 'المستوى غير موجود' });
 		}
-		res.status(200).json({ data: level.students });
+		res.status(200).json({ count: level.students.length });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}

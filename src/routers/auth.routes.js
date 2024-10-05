@@ -4,6 +4,8 @@ const {
 	userLogin,
 	createTeacherByAdmin,
 	logout,
+	verifyOtp,
+	resendOtp,
 } = require('../controllers/auth.controller');
 const studentValidationRules = require('../validations/student.vc');
 const validate = require('../middlewares/validators.mw');
@@ -18,6 +20,8 @@ router.post(
 	validate,
 	registerStudent,
 );
+router.post('/verify-otp', verifyOtp);
+router.post('/resend-otp', resendOtp);
 router.post('/login-user', userLogin);
 router.post(
 	'/create-teacher',

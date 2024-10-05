@@ -1,4 +1,4 @@
-const { Student, Teacher, Admin } = require('../models');
+const { Student, Teacher, Admin, Wallet } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -6,13 +6,73 @@ const getCurrentUser = async (req, res) => {
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
 	try {
 		let user =
-			(await Student.findByPk(userId)) ||
-			(await Teacher.findByPk(userId)) ||
-			(await Admin.findByPk(userId));
+			(await Student.findByPk(userId, {
+				include: {
+					model: Wallet,
+					as: 'wallet',
+					attributes: ['id', 'balance'],
+				},
+			})) ||
+			(await Teacher.findByPk(userId, {
+				include: {
+					model: Wallet,
+					as: 'wallet',
+					attributes: ['id', 'balance'],
+				},
+			})) ||
+			(await Admin.findByPk(userId, {
+				include: {
+					model: Wallet,
+					as: 'wallet',
+					attributes: ['id', 'balance'],
+				},
+			}));
 		if (!user || user === null) {
 			return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
 		}
-		return res.status(200).json({ data: user });
+		let responseData;
+		if (user.role === 'admin') {
+			responseData = {
+				id: user.id,
+				name: user.name,
+				email: user.email,
+				picture: user.picture,
+				walletId: user.walletId,
+				role: user.role,
+				walletBalance: user.wallet.balance,
+			};
+		} else if (user.role === 'student') {
+			responseData = {
+				id: user.id,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				email: user.email,
+				picture: user.picture,
+				level: user.levelId,
+				nationalId: user.nationalId,
+				phoneNumber: user.phoneNumber,
+				parentPhoneNumber: user.parentPhoneNumber,
+				walletId: user.walletId,
+				role: user.role,
+				walletBalance: user.wallet.balance,
+			};
+		} else if (user.role === 'teacher') {
+			responseData = {
+				id: user.id,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				email: user.email,
+				phoneNumber: user.phoneNumber,
+				walletId: user.walletId,
+				specialization: user.specialization,
+				picture: user.picture,
+				graduationYear: user.graduationYear,
+				educationalQualification: user.educationalQualification,
+				role: user.role,
+				walletBalance: user.wallet.balance,
+			};
+		}
+		return res.status(200).json({ data: responseData });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}

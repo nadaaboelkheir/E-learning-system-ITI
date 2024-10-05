@@ -95,7 +95,6 @@ const createFullCourse = async (req, res) => {
 
 		res.status(201).json({
 			message: 'تم انشاء الدورة بنجاح',
-			data: course,
 		});
 	} catch (error) {
 		await transaction.rollback();
@@ -187,7 +186,6 @@ const updateCourse = async (req, res) => {
 
 		res.status(200).json({
 			message: 'تم تحديث الدورة بنجاح',
-			data: course,
 		});
 	} catch (error) {
 		console.error('Error updating course:', error);

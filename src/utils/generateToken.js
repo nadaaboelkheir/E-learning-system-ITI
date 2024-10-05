@@ -1,15 +1,14 @@
 const jwt = require('jsonwebtoken');
 const { Admin, Student, Teacher } = require('../models');
+const { JWT_SECRET, JWT_REFRESH_SECRET } = require('../utils/env');
 
 const generateTokenAndSetCookie = async (userId, role, res) => {
 	const accessToken = jwt.sign({ id: userId, role }, JWT_SECRET, {
 		expiresIn: '1h',
 	});
-	const refreshToken = jwt.sign(
-		{ id: userId },
-		JWT_REFRESH_SECRET,
-		{ expiresIn: '7d' },
-	);
+	const refreshToken = jwt.sign({ id: userId }, JWT_REFRESH_SECRET, {
+		expiresIn: '7d',
+	});
 
 	let user;
 	if (role === 'admin') {

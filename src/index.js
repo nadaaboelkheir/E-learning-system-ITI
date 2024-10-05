@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { PORT } = require('./utils/env');
 const cors = require('cors');
 const db = require('./models');
+const session = require('express-session');
 
 // create express app
 const app = express();
@@ -27,6 +28,14 @@ app.use(
 	cors({
 		origin: 'http://localhost:5173',
 		credentials: true,
+	}),
+);
+app.use(
+	session({
+		secret: 'keyboard cat',
+		resave: false,
+		saveUninitialized: true,
+		cookie: { maxAge: 300000 }, // 5 minutes
 	}),
 );
 
