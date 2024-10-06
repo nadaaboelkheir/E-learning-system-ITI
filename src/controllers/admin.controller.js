@@ -101,6 +101,10 @@ const getAllTeachers = async (req, res) => {
 const getAllStudents = async (req, res) => {
 	try {
 		const students = await Student.findAll({
+			include: {
+				model: Level,
+				attributes: ['title'],
+			},
 			attributes: {
 				exclude: [
 					'walletId',

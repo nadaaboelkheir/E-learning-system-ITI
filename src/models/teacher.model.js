@@ -89,6 +89,13 @@ module.exports = (sequelize, DataTypes) => {
 			},
 			as: 'wallet',
 		});
+
+		Teacher.belongsTo(models.Level, {
+			foreignKey: 'levelId',
+			as: 'level',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+		});
 	};
 	return Teacher;
 };

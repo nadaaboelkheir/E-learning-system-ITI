@@ -94,11 +94,9 @@ const verifyOtp = async (req, res) => {
 
 		// Check if OTP is expired
 		if (Date.now() > otpExpiry) {
-			return res
-				.status(400)
-				.json({
-					error: 'لقد انتهت صلاحية رمز التحقق. يرجى المحاولة مرة أخرى',
-				});
+			return res.status(400).json({
+				error: 'لقد انتهت صلاحية رمز التحقق. يرجى المحاولة مرة أخرى',
+			});
 		}
 
 		// Compare the provided OTP with the session OTP
@@ -194,6 +192,17 @@ const createTeacherByAdmin = async (req, res) => {
 			return res.status(400).json({ error: 'المدرس موجود بالفعل' });
 		}
 
+		if (phoneNumber) {
+			const existingTeacher = await Teacher.findOne({
+				where: { phoneNumber },
+			});
+			if (existingTeacher) {
+				return res
+					.status(400)
+					.json({ error: 'رقم الهاتف مستخدم بالفعل' });
+			}
+		}
+
 		const hashedPassword = await bcrypt.hash(password, 10);
 		const newTeacher = await Teacher.create({
 			firstName,
@@ -215,7 +224,6 @@ const createTeacherByAdmin = async (req, res) => {
 
 		return res.status(201).json({
 			message: 'تم تسجيل المدرس بنجاح',
-			data: newTeacher,
 		});
 	} catch (error) {
 		res.status(500).json({ error: error.message });
