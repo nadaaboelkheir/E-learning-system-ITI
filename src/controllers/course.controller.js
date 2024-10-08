@@ -6,7 +6,11 @@ const {
 	Video,
 	sequelize,
 	Teacher,
+	Level,
+	Student,
+	Enrollment,
 } = require('../models');
+const { Op } = require('sequelize');
 
 const createFullCourse = async (req, res) => {
 	const { title, description, levelId, price, sections } = req.body;
@@ -391,12 +395,49 @@ const getCourseDetails = async (req, res) => {
 						},
 					],
 				},
+				{
+					model: Teacher,
+					as: 'teacher',
+					attributes: ['id', 'firstName', 'lastName'],
+				},
+				{
+					model: Level,
+					as: 'level',
+					attributes: ['title'],
+				},
 			],
 		});
+
 		if (!course) {
 			return res.status(404).json({ error: 'الدورة غير موجودة' });
 		}
-		return res.status(200).json({ data: course });
+
+		// Calculate the total number of lessons
+		const lessonsCount = course.Sections.reduce((count, section) => {
+			return count + section.Lessons.length;
+		}, 0);
+
+		// Move teacher data to main response object
+		const { id: teacherId, firstName, lastName } = course.teacher;
+
+		// Move level data to main response object
+		const { levelTitle } = course.level;
+
+		return res.status(200).json({
+			id: course.id,
+			title: course.title,
+			description: course.description,
+			image: course.image,
+			levelId: course.levelId,
+			levelTitle,
+			teacherId, // Add teacherId to the main object
+			teacherName: `${firstName} ${lastName}`, // Combine first and last name
+			price: course.price,
+			createdAt: course.createdAt,
+			updatedAt: course.updatedAt,
+			lessonsCount, // Add the number of lessons
+			Sections: course.Sections, // Include sections if needed
+		});
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
@@ -404,11 +445,65 @@ const getCourseDetails = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
 	try {
-		const courses = await Course.findAll();
+		const courses = await Course.findAll({
+			include: [
+				{
+					model: Teacher,
+					as: 'teacher',
+					attributes: ['id', 'firstName', 'lastName'],
+				},
+				{
+					model: Level,
+					as: 'level',
+					attributes: ['title'],
+				},
+			],
+		});
 		if (!courses || courses.length === 0) {
 			return res.status(404).json({ error: 'لا يوجد دورات' });
 		}
-		return res.status(200).json({ count: courses.length, data: courses });
+		const formattedCourses = courses.map((course) => ({
+			id: course.id,
+			title: course.title,
+			description: course.description,
+			price: course.price,
+			image: course.image,
+			teacherId: course.teacher.id,
+			teacherName: course.teacher
+				? `${course.teacher.firstName} ${course.teacher.lastName}`
+				: 'No teacher assigned',
+			levelTitle: course.level?.title || 'No level assigned',
+		}));
+		return res
+			.status(200)
+			.json({ count: formattedCourses.length, data: formattedCourses });
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const getStudentsInCourse = async (req, res) => {
+	const { courseId } = req.params;
+	try {
+		const course = await Course.findOne({
+			where: { id: courseId },
+			include: [
+				{
+					model: Student,
+					as: 'students',
+					attributes: ['id', 'firstName', 'lastName'],
+					through: {
+						attributes: [],
+					},
+				},
+			],
+		});
+		if (!course) {
+			return res.status(404).json({ error: 'الدورة غير موجودة' });
+		}
+		return res
+			.status(200)
+			.json({ count: course.students.length, data: course.students });
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
@@ -421,4 +516,5 @@ module.exports = {
 	getTeacherCourses,
 	getCourseDetails,
 	getAllCourses,
+	getStudentsInCourse,
 };

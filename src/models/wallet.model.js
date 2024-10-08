@@ -30,17 +30,22 @@ module.exports = (sequelize, DataTypes) => {
 		Wallet.belongsTo(models.Student, {
 			foreignKey: 'walletableId',
 			constraints: false,
-			as: 'studentWallet',  
+			as: 'studentWallet',
 		});
 		Wallet.belongsTo(models.Teacher, {
 			foreignKey: 'walletableId',
 			constraints: false,
-			as: 'teacherWallet',  
+			as: 'teacherWallet',
 		});
 		Wallet.belongsTo(models.Admin, {
 			foreignKey: 'walletableId',
 			constraints: false,
-			as: 'adminWallet', 
+			as: 'adminWallet',
+		});
+		Wallet.hasMany(models.Transaction, {
+			foreignKey: 'walletId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
 		});
 	};
 

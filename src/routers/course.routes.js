@@ -7,6 +7,7 @@ const {
 	getTeacherCourses,
 	getCourseDetails,
 	getAllCourses,
+	getStudentsInCourse,
 } = require('../controllers/course.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
@@ -26,5 +27,6 @@ router.delete('/delete-course/:id', protectRoute, deleteCourse);
 router.get('/teacher-courses/:teacherId', getTeacherCourses);
 router.get('/course-details/:id', getCourseDetails);
 router.get('/all-courses', getAllCourses);
+router.get('/students-in-course/:courseId', getStudentsInCourse);
 
 module.exports = router;

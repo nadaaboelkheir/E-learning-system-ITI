@@ -21,6 +21,10 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.DATE,
 			allowNull: false,
 		},
+		eventUrl: {
+			type: DataTypes.STRING(255),
+			allowNull: true,
+		},
 		adminId: {
 			type: DataTypes.UUID,
 			references: {

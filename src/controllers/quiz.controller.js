@@ -1,4 +1,12 @@
-const { sequelize, Quiz, Question, Answer } = require('../models');
+const {
+	sequelize,
+	Quiz,
+	Question,
+	Answer,
+	Course,
+	Student,
+	Teacher,
+} = require('../models');
 
 const createQuiz = async (req, res) => {
 	const { title, Duration, sectionId, questions } = req.body;
@@ -48,4 +56,53 @@ const createQuiz = async (req, res) => {
 	}
 };
 
-module.exports = { createQuiz };
+const getQuestionsInQuiz = async (req, res) => {
+	const { id } = req.params;
+	try {
+		const questions = await Question.findAll({
+			where: { quizId: id },
+			attributes: ['id', 'title', 'mark'],
+			include: [
+				{
+					model: Answer,
+					attributes: ['id', 'title', 'isCorrect'],
+				},
+			],
+		});
+		return res.status(200).json({ data: questions });
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+const getAllQuizzes = async (req, res) => {
+	try {
+		const allQuizzes = await Quiz.findAll({
+			attributes: ['id', 'title', 'createdAt'],
+			include: [
+				{
+					model: Course,
+					as: 'course',
+					attributes: ['id', 'title'],
+				},
+				{
+					model: Student,
+					as: 'student',
+					attributes: ['id', 'firstName', 'lastName'],
+				},
+				{
+					model: Teacher,
+					as: 'teacher',
+					attributes: ['id', 'firstName', 'lastName'],
+				},
+			],
+		});
+		return res
+			.status(200)
+			.json({ count: allQuizzes.length, data: allQuizzes });
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+module.exports = { createQuiz, getQuestionsInQuiz, getAllQuizzes };

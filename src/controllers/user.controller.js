@@ -1,4 +1,4 @@
-const { Student, Teacher, Admin, Wallet } = require('../models');
+const { Student, Teacher, Admin, Wallet, Level, Course } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -49,7 +49,8 @@ const getCurrentUser = async (req, res) => {
 				email: user.email,
 				picture: user.picture,
 				level: user.levelId,
-				nationalId: user.nationalId,
+				levelTitle: user.level?.title,
+				nationalId: user.nationalID,
 				phoneNumber: user.phoneNumber,
 				parentPhoneNumber: user.parentPhoneNumber,
 				walletId: user.walletId,
@@ -148,51 +149,116 @@ const getUserById = async (req, res) => {
 	const { id } = req.params;
 	try {
 		// Search in admins
-		const admin = await Admin.findOne({ where: { id } });
+		const admin = await Admin.findOne({
+			where: { id },
+			include: {
+				model: Wallet,
+				as: 'wallet',
+				attributes: ['balance'],
+			},
+		});
 		if (admin) {
 			const {
 				password,
 				createdAt,
 				updatedAt,
 				refreshToken,
+				wallet,
 				...safeAdmin
 			} = admin.dataValues;
-			return res.status(200).json(safeAdmin);
+			return res.status(200).json({
+				...safeAdmin,
+				walletBalance: admin.wallet?.balance || 0,
+			});
 		}
 
 		// Search in teachers
-		const teacher = await Teacher.findOne({ where: { id } });
+		const teacher = await Teacher.findOne({
+			where: { id },
+			include: {
+				model: Wallet,
+				as: 'wallet',
+				attributes: ['balance'],
+			},
+		});
 		if (teacher) {
 			const {
 				password,
 				createdAt,
 				updatedAt,
 				refreshToken,
+				wallet,
 				...safeTeacher
 			} = teacher.dataValues;
-			return res.status(200).json(safeTeacher);
+			return res.status(200).json({
+				...safeTeacher,
+				walletBalance: teacher.wallet?.balance || 0,
+			});
 		}
 
 		// Search in students
-		const student = await Student.findOne({ where: { id } });
+		const student = await Student.findOne({
+			where: { id },
+			include: [
+				{
+					model: Wallet,
+					as: 'wallet',
+					attributes: ['balance'],
+				},
+				{
+					model: Level,
+					as: 'level',
+					attributes: ['title'],
+				},
+				{
+					model: Course,
+					as: 'courses',
+					attributes: ['title'],
+					include: [
+						{
+							model: Teacher,
+							as: 'teacher',
+							attributes: ['firstName', 'lastName'],
+						},
+					],
+					through: { attributes: [] },
+				},
+			],
+		});
 		if (student) {
 			const {
-				emailVerified,
+				isEmailVerified,
 				password,
 				walletId,
 				createdAt,
 				updatedAt,
 				refreshToken,
+				wallet,
+				level,
+				courses,
+
 				...safeStudent
 			} = student.dataValues;
-			return res.status(200).json(safeStudent);
+			const coursesWithTeachers = student.courses.map((course) => ({
+				title: course.title,
+				teacherName: course.teacher
+					? `${course.teacher.firstName} ${course.teacher.lastName}`
+					: 'No teacher assigned',
+			}));
+			return res.status(200).json({
+				...safeStudent,
+				walletBalance: student.wallet?.balance,
+				levelTitle: student.level?.title,
+				numberOfCourses: coursesWithTeachers.length,
+				courses: coursesWithTeachers,
+			});
 		}
 
 		// If no user is found in any of the tables
 		return res.status(404).json({ message: 'User not found.' });
 	} catch (error) {
 		console.error('Error fetching user by ID:', error);
-		throw new Error('Failed to retrieve user.');
+		return res.status(500).json({ message: 'Failed to retrieve user.' });
 	}
 };
 

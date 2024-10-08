@@ -14,6 +14,10 @@ module.exports = (sequelize, DataTypes) => {
 			courseId: {
 				type: DataTypes.UUID,
 				allowNull: true,
+				references: {
+					model: 'Courses',
+					key: 'id',
+				},
 			},
 		},
 		{
@@ -25,6 +29,7 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: 'levelId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			as: 'courses',
 		});
 
 		Level.hasMany(models.Student, {

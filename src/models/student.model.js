@@ -103,6 +103,12 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
+		Student.hasMany(models.Quiz, {
+			foreignKey: 'studentId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+			as: 'quizzes',
+		});
 
 		Student.hasOne(models.Wallet, {
 			foreignKey: 'walletableId',
@@ -116,6 +122,7 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: 'levelId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			as: 'level',
 		});
 	};
 

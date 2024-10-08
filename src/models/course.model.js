@@ -48,11 +48,13 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: 'levelId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			as: 'level',
 		});
 		Course.belongsTo(models.Teacher, {
 			foreignKey: 'teacherId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			as: 'teacher',
 		});
 		Course.hasMany(models.Section, {
 			foreignKey: 'courseId',
@@ -73,6 +75,12 @@ module.exports = (sequelize, DataTypes) => {
 			through: models.Enrollment,
 			foreignKey: 'courseId',
 			as: 'students',
+		});
+		Course.hasMany(models.Quiz, {
+			foreignKey: 'courseId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+			as: 'quizzes',
 		});
 	};
 

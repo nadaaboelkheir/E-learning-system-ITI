@@ -90,6 +90,13 @@ module.exports = (sequelize, DataTypes) => {
 			as: 'wallet',
 		});
 
+		Teacher.hasMany(models.Quiz, {
+			foreignKey: 'teacherId',
+			onUpdate: 'CASCADE',
+			onDelete: 'CASCADE',
+			as: 'quizzes',
+		});
+
 		Teacher.belongsTo(models.Level, {
 			foreignKey: 'levelId',
 			as: 'level',

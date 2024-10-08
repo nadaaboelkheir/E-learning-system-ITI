@@ -93,11 +93,38 @@ const getTeacherLevels = async (req, res) => {
 	}
 };
 
-module.exports = { getTeacherLevels };
+const getCoursesInLevel = async (req, res) => {
+	const { levelId } = req.params;
+	try {
+		const level = await Level.findOne({
+			where: { id: levelId },
+			include: {
+				model: Course,
+				as: 'courses',
+				attributes: ['title'],
+			},
+		});
+		if (!level) {
+			return res.status(404).json({ error: 'المستوى غير موجود' });
+		}
+		if (!level.courses || level.courses.length === 0) {
+			return res
+				.status(404)
+				.json({ error: 'لا يوجد دورات في هذا المستوى' });
+		}
+		res.status(200).json({
+			count: level.courses.length,
+			data: level.courses,
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
 
 module.exports = {
 	getAllLevels,
 	deleteLevel,
 	getStudentsInLevel,
 	getTeacherLevels,
+	getCoursesInLevel,
 };
