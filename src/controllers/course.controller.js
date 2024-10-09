@@ -8,7 +8,7 @@ const {
 	Teacher,
 } = require('../models');
 
-const createFullCourse = async (req, res) => {
+exports.createFullCourse = async (req, res) => {
 	const { title, description, levelId, price, sections } = req.body;
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
@@ -102,7 +102,7 @@ const createFullCourse = async (req, res) => {
 	}
 };
 
-const updateCourse = async (req, res) => {
+exports.updateCourse = async (req, res) => {
 	const courseId = req.params.courseId;
 	const { title, description, levelId, price, section } = req.body;
 
@@ -195,7 +195,7 @@ const updateCourse = async (req, res) => {
 };
 
 // Function to handle lessons associated with sections
-const handleLessons = async (lessons, sectionId, transaction) => {
+exports.handleLessons = async (lessons, sectionId, transaction) => {
 	if (!Array.isArray(lessons)) return;
 
 	for (const lessonData of lessons) {
@@ -266,7 +266,7 @@ const handleLessons = async (lessons, sectionId, transaction) => {
 };
 
 // Function to handle media files (PDFs and Videos)
-const handleMedia = async (mediaList, mediaType, lessonId, transaction) => {
+exports.handleMedia = async (mediaList, mediaType, lessonId, transaction) => {
 	if (!Array.isArray(mediaList)) return;
 
 	for (const mediaData of mediaList) {
@@ -311,7 +311,7 @@ const handleMedia = async (mediaList, mediaType, lessonId, transaction) => {
 	}
 };
 
-const deleteCourse = async (req, res) => {
+exports.deleteCourse = async (req, res) => {
 	const { id } = req.params;
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
@@ -332,7 +332,7 @@ const deleteCourse = async (req, res) => {
 	}
 };
 
-const getTeacherCourses = async (req, res) => {
+exports.getTeacherCourses = async (req, res) => {
 	const { teacherId } = req.params;
 	try {
 		const teacher = await Teacher.findOne({ where: { id: teacherId } });
@@ -369,7 +369,7 @@ const getTeacherCourses = async (req, res) => {
 	}
 };
 
-const getCourseDetails = async (req, res) => {
+exports.getCourseDetails = async (req, res) => {
 	const { id } = req.params;
 	try {
 		const course = await Course.findOne({
@@ -402,7 +402,7 @@ const getCourseDetails = async (req, res) => {
 	}
 };
 
-const getAllCourses = async (req, res) => {
+exports.getAllCourses = async (req, res) => {
 	try {
 		const courses = await Course.findAll();
 		if (!courses || courses.length === 0) {
@@ -412,13 +412,4 @@ const getAllCourses = async (req, res) => {
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
-};
-
-module.exports = {
-	createFullCourse,
-	updateCourse,
-	deleteCourse,
-	getTeacherCourses,
-	getCourseDetails,
-	getAllCourses,
 };

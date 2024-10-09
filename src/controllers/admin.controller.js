@@ -1,7 +1,7 @@
 const { Admin, Wallet, Level, Student, Teacher, Event } = require('../models');
 const bcrypt = require('bcryptjs');
 
-const adminSignup = async (req, res) => {
+exports.adminSignup = async (req, res) => {
 	try {
 		const { name, email, password } = req.body;
 
@@ -38,7 +38,7 @@ const adminSignup = async (req, res) => {
 	}
 };
 
-const adminCreateLevelWithSubLevels = async (req, res) => {
+exports.adminCreateLevelWithSubLevels = async (req, res) => {
 	const { title, subLevels } = req.body;
 	try {
 		if (req.role !== 'admin') {
@@ -54,7 +54,6 @@ const adminCreateLevelWithSubLevels = async (req, res) => {
 
 		const parentLevel = await Level.create({
 			title,
-			
 		});
 
 		if (subLevels && Array.isArray(subLevels)) {
@@ -75,7 +74,7 @@ const adminCreateLevelWithSubLevels = async (req, res) => {
 	}
 };
 
-const adminDeleteUser = async (req, res) => {
+exports.adminDeleteUser = async (req, res) => {
 	const { userId } = req.params;
 	try {
 		if (req.role !== 'admin') {
@@ -96,7 +95,7 @@ const adminDeleteUser = async (req, res) => {
 	}
 };
 
-const getAllTeachers = async (req, res) => {
+exports.getAllTeachers = async (req, res) => {
 	try {
 		const teachers = await Teacher.findAll({
 			attributes: {
@@ -112,7 +111,7 @@ const getAllTeachers = async (req, res) => {
 	}
 };
 
-const getAllStudents = async (req, res) => {
+exports.getAllStudents = async (req, res) => {
 	try {
 		const students = await Student.findAll({
 			attributes: {
@@ -134,7 +133,7 @@ const getAllStudents = async (req, res) => {
 	}
 };
 
-const getAllSubjects = async (req, res) => {
+exports.getAllSubjects = async (req, res) => {
 	try {
 		const specializations = await Teacher.findAll({
 			attributes: ['specialization'],
@@ -152,7 +151,7 @@ const getAllSubjects = async (req, res) => {
 	}
 };
 
-const adminAddNewEvent = async (req, res) => {
+exports.adminAddNewEvent = async (req, res) => {
 	const { title, description, start, end } = req.body;
 	try {
 		if (req.role !== 'admin') {
@@ -174,7 +173,7 @@ const adminAddNewEvent = async (req, res) => {
 	}
 };
 
-const adminGetEvents = async (req, res) => {
+exports.adminGetEvents = async (req, res) => {
 	try {
 		const events = await Event.findAll();
 		if (!events || events.length === 0) {
@@ -184,15 +183,4 @@ const adminGetEvents = async (req, res) => {
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
-};
-
-module.exports = {
-	adminSignup,
-	adminCreateLevelWithSubLevels,
-	adminDeleteUser,
-	getAllTeachers,
-	getAllStudents,
-	getAllSubjects,
-	adminAddNewEvent,
-	adminGetEvents,
 };

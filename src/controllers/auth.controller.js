@@ -6,7 +6,7 @@ const { sendVerificationEmail, generateOtp } = require('../utils/mailer');
 const { generateTokenAndSetCookie } = require('../utils/generateToken');
 const { Op } = require('sequelize');
 
-const registerStudent = async (req, res) => {
+exports.registerStudent = async (req, res) => {
 	const {
 		firstName,
 		lastName,
@@ -70,7 +70,7 @@ const registerStudent = async (req, res) => {
 	}
 };
 
-const verifyOtp = async (req, res) => {
+exports.verifyOtp = async (req, res) => {
 	try {
 		const { email, otp: sessionOtp, otpExpiry } = req.session;
 		const { otp } = req.body;
@@ -121,7 +121,7 @@ const verifyOtp = async (req, res) => {
 	}
 };
 
-const resendOtp = async (req, res) => {
+exports.resendOtp = async (req, res) => {
 	try {
 		const { email } = req.session;
 
@@ -165,7 +165,7 @@ const resendOtp = async (req, res) => {
 	}
 };
 
-const createTeacherByAdmin = async (req, res) => {
+exports.createTeacherByAdmin = async (req, res) => {
 	const {
 		firstName,
 		lastName,
@@ -220,7 +220,7 @@ const createTeacherByAdmin = async (req, res) => {
 	}
 };
 
-const userLogin = async (req, res) => {
+exports.userLogin = async (req, res) => {
 	const { email, password } = req.body;
 	try {
 		const student = await Student.findOne({
@@ -257,17 +257,9 @@ const userLogin = async (req, res) => {
 	}
 };
 
-const logout = async (req, res) => {
+exports.logout = async (req, res) => {
 	res.clearCookie('access-token');
 	res.clearCookie('refresh-token');
 	res.status(200).json({ message: 'تم تسجيل الخروج بنجاح' });
 };
 
-module.exports = {
-	registerStudent,
-	userLogin,
-	createTeacherByAdmin,
-	logout,
-	verifyOtp,
-	resendOtp,
-};

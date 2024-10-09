@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const { Admin, Student, Teacher } = require('../models');
 const { JWT_SECRET, JWT_REFRESH_SECRET } = require('../utils/env');
 
-const generateTokenAndSetCookie = async (userId, role, res) => {
+exports.generateTokenAndSetCookie = async (userId, role, res) => {
 	const accessToken = jwt.sign({ id: userId, role }, JWT_SECRET, {
 		expiresIn: '1h',
 	});
@@ -39,7 +39,7 @@ const generateTokenAndSetCookie = async (userId, role, res) => {
 	}
 };
 
-const refreshAccessToken = async (req, res) => {
+exports.refreshAccessToken = async (req, res) => {
 	const refreshToken = req.cookies['refresh-token'];
 
 	if (!refreshToken) {
@@ -92,7 +92,3 @@ const refreshAccessToken = async (req, res) => {
 	}
 };
 
-module.exports = {
-	generateTokenAndSetCookie,
-	refreshAccessToken,
-};

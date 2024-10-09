@@ -1,6 +1,6 @@
 const { sequelize, Quiz, Question, Answer } = require('../models');
 
-const createQuiz = async (req, res) => {
+exports.createQuiz = async (req, res) => {
 	const { title, Duration, sectionId, questions } = req.body;
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
@@ -48,4 +48,4 @@ const createQuiz = async (req, res) => {
 	}
 };
 
-module.exports = { createQuiz };
+

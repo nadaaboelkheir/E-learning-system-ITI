@@ -1,6 +1,6 @@
 const { Level, Student } = require('../models');
 
-const getAllLevels = async (req, res) => {
+exports.getAllLevels = async (req, res) => {
 	try {
 		const levels = await Level.findAll({
 			attributes: ['id', 'title'],
@@ -24,7 +24,7 @@ const getAllLevels = async (req, res) => {
 	}
 };
 
-const deleteLevel = async (req, res) => {
+exports.deleteLevel = async (req, res) => {
 	const { id } = req.params;
 	try {
 		const level = await Level.findByPk(id);
@@ -38,7 +38,7 @@ const deleteLevel = async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
-const getMainLevelById = async (req, res) => {
+exports.getMainLevelById = async (req, res) => {
     const { id } = req.params;
     try {
         const level = await Level.findOne({
@@ -66,7 +66,7 @@ const getMainLevelById = async (req, res) => {
     }
 };
 
-const getStudentsInLevel = async (req, res) => {
+exports.getStudentsInLevel = async (req, res) => {
 	const { levelId } = req.params;
 	try {
 		const level = await Level.findOne({
@@ -85,9 +85,4 @@ const getStudentsInLevel = async (req, res) => {
 	}
 };
 
-module.exports = {
-	getAllLevels,
-	deleteLevel,
-	getStudentsInLevel,
-	getMainLevelById
-};
+

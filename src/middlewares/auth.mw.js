@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const protectRoute = async (req, res, next) => {
+exports.protectRoute = async (req, res, next) => {
 	const token = req.cookies['access-token'];
 	if (!token) {
 		return res.status(401).json({ error: 'لا تستطيع الوصول لهذه الصفحة' });
@@ -25,4 +25,4 @@ const protectRoute = async (req, res, next) => {
 	}
 };
 
-module.exports = { protectRoute };
+
