@@ -8,9 +8,7 @@ const {
 	Teacher,
 	Level,
 	Student,
-	Enrollment,
 } = require('../models');
-const { Op } = require('sequelize');
 
 const createFullCourse = async (req, res) => {
 	const { title, description, levelId, price, sections } = req.body;
@@ -454,6 +452,9 @@ const getCourseDetails = async (req, res) => {
 const getAllCourses = async (req, res) => {
 	try {
 		const courses = await Course.findAll({
+			where: {
+				courseVerify: true,
+			},
 			include: [
 				{
 					model: Teacher,

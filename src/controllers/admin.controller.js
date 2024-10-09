@@ -297,8 +297,28 @@ const getPendingTeachersAndCourses = async (req, res) => {
 				.status(404)
 				.json({ error: 'لا يوجد دورات قيد المراجعة' });
 		}
-		res.status(200).json({ count: teachers.length, data: teachers });
-		res.status(200).json({ count: courses.length, data: courses });
+		res.status(200).json({
+			teacherCount: teachers.length,
+			teacherData: teachers,
+			courseCount: courses.length,
+			courseData: courses,
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+const deletePendingCourse = async (req, res) => {
+	const { courseId } = req.params;
+	try {
+		const course = await Course.findOne({
+			where: { id: courseId, courseVerify: false },
+		});
+		if (!course) {
+			return res.status(404).json({ error: 'الدورة غير موجودة' });
+		}
+		await Course.destroy({ where: { id: courseId } });
+		res.status(200).json({ message: 'تم حذف الدورة بنجاح' });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
@@ -317,4 +337,5 @@ module.exports = {
 	adminVerifyTeacher,
 	getPendingTeachersAndCourses,
 	adminVerifyCourse,
+	deletePendingCourse,
 };

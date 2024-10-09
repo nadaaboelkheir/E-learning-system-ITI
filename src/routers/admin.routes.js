@@ -12,6 +12,8 @@ const {
 	getTeacherCourses,
 	adminVerifyTeacher,
 	getPendingTeachersAndCourses,
+	adminVerifyCourse,
+	deletePendingCourse,
 } = require('../controllers/admin.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 
@@ -27,6 +29,16 @@ router.post('/add-new-event', protectRoute, adminAddNewEvent);
 router.get('/get-events', adminGetEvents);
 router.get('/get-teacher-levels/:teacherId', getTeacherCourses);
 router.patch('/verify-teacher/:teacherId', protectRoute, adminVerifyTeacher);
-router.get('/get-pending-teachers', protectRoute, getPendingTeachersAndCourses);
+router.get(
+	'/get-pending-teachers-courses',
+	protectRoute,
+	getPendingTeachersAndCourses,
+);
+router.patch('/verify-course/:courseId', protectRoute, adminVerifyCourse);
+router.delete(
+	'/delete-pending-course/:courseId',
+	protectRoute,
+	deletePendingCourse,
+);
 
 module.exports = router;

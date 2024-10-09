@@ -1,8 +1,11 @@
 const jwt = require('jsonwebtoken');
-
+const { Teacher } = require('../models');
 const protectRoute = async (req, res, next) => {
 	const token =
-		req.cookies['access-token'] || req.headers.authorization.split(' ')[1];
+		req.cookies['access-token'] ||
+		(req.headers.authorization
+			? req.headers.authorization.split(' ')[1]
+			: null);
 	if (!token) {
 		return res.status(401).json({ error: 'لا تستطيع الوصول لهذه الصفحة' });
 	}
@@ -17,7 +20,14 @@ const protectRoute = async (req, res, next) => {
 		} else if (decoded.role === 'student') {
 			req.student = { id: decoded.id, role: decoded.role };
 		} else if (decoded.role === 'teacher') {
-			req.teacher = { id: decoded.id, role: decoded.role };
+			const teacher = await Teacher.findOne({
+				where: { id: decoded.id },
+				attributes: ['id', 'role', 'isEmailVerified'],
+			});
+			if (!teacher) {
+				return res.status(401).json({ error: 'Teacher not found' });
+			}
+			req.teacher = teacher;
 		}
 
 		next();
