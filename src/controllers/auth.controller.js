@@ -31,7 +31,7 @@ const registerStudent = async (req, res) => {
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 		const otp = generateOtp();
-		const otpExpiry = Date.now() + 2 * 60 * 1000;
+		const otpExpiry = Date.now() + 6 * 60 * 1000;
 
 		const newStudent = await Student.create({
 			firstName,
@@ -94,11 +94,9 @@ const verifyOtp = async (req, res) => {
 
 		// Check if OTP is expired
 		if (Date.now() > otpExpiry) {
-			return res
-				.status(400)
-				.json({
-					error: 'لقد انتهت صلاحية رمز التحقق. يرجى المحاولة مرة أخرى',
-				});
+			return res.status(400).json({
+				error: 'لقد انتهت صلاحية رمز التحقق. يرجى المحاولة مرة أخرى',
+			});
 		}
 
 		// Compare the provided OTP with the session OTP
@@ -226,7 +224,7 @@ const userLogin = async (req, res) => {
 	const { email, password } = req.body;
 	try {
 		const student = await Student.findOne({
-			where: { email },
+			where: { email: email },
 		});
 		if (student?.isEmailVerified === false) {
 			return res.status(400).json({
@@ -234,7 +232,7 @@ const userLogin = async (req, res) => {
 			});
 		}
 		const teacher = await Teacher.findOne({
-			where: { email },
+			where: { email: email },
 		});
 		const admin = await Admin.findOne({ where: { email } });
 
@@ -253,7 +251,7 @@ const userLogin = async (req, res) => {
 		});
 		return res
 			.status(200)
-			.json({ message: 'تم تسجيل الدخول بنجاح', accessToken });
+			.json({ message: 'تم تسجيل الدخول بنجاح', role });
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
