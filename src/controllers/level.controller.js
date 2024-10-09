@@ -71,6 +71,7 @@ const getTeacherLevels = async (req, res) => {
 			include: [
 				{
 					model: Course,
+					as: 'courses',
 					where: { teacherId }, // Match courses by teacher ID
 					attributes: [], // We only care about levels, so no need to return course details
 				},

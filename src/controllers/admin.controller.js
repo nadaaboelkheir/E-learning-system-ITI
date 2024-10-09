@@ -1,4 +1,12 @@
-const { Admin, Wallet, Level, Student, Teacher, Event } = require('../models');
+const {
+	Admin,
+	Wallet,
+	Level,
+	Student,
+	Teacher,
+	Event,
+	Course,
+} = require('../models');
 const bcrypt = require('bcryptjs');
 
 const adminSignup = async (req, res) => {
@@ -85,8 +93,19 @@ const adminDeleteUser = async (req, res) => {
 const getAllTeachers = async (req, res) => {
 	try {
 		const teachers = await Teacher.findAll({
+			include: {
+				model: Level,
+				as: 'level',
+				attributes: ['title'],
+			},
 			attributes: {
-				exclude: ['walletId', 'updatedAt', 'refreshToken', 'password'],
+				exclude: [
+					'walletId',
+					'updatedAt',
+					'refreshToken',
+					'password',
+					'isEmailVerified',
+				],
 			},
 		});
 		if (!teachers || teachers.length === 0) {
@@ -103,6 +122,7 @@ const getAllStudents = async (req, res) => {
 		const students = await Student.findAll({
 			include: {
 				model: Level,
+				as: 'level',
 				attributes: ['title'],
 			},
 			attributes: {
@@ -176,6 +196,32 @@ const adminGetEvents = async (req, res) => {
 	}
 };
 
+const getTeacherCourses = async (req, res) => {
+	const { teacherId } = req.params;
+	try {
+		const teacher = await Teacher.findOne({ where: { id: teacherId } });
+		if (!teacher) {
+			return res.status(404).json({ error: 'المدرس غير موجود' });
+		}
+		const courses = await Course.findAll({
+			where: { teacherId },
+			include: [
+				{
+					model: Level,
+					attributes: ['id', 'title'],
+					as: 'level',
+				},
+			],
+		});
+		if (!courses || courses.length === 0) {
+			return res.status(404).json({ error: 'لا يوجد دورات لهذا المدرس' });
+		}
+		return res.status(200).json({ count: courses.length, data: courses });
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
 module.exports = {
 	adminSignup,
 	adminCreateLevel,
@@ -185,4 +231,5 @@ module.exports = {
 	getAllSubjects,
 	adminAddNewEvent,
 	adminGetEvents,
+	getTeacherCourses,
 };

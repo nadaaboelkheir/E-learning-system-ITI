@@ -69,6 +69,14 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.UUID,
 				allowNull: true,
 			},
+			levelId: {
+				type: DataTypes.UUID,
+				allowNull: true,
+				references: {
+					model: 'Levels',
+					key: 'id',
+				},
+			},
 		},
 		{
 			timestamps: true,
@@ -79,6 +87,7 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: 'teacherId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			as: 'courses',
 		});
 
 		Teacher.hasOne(models.Wallet, {

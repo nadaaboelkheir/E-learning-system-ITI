@@ -362,6 +362,11 @@ const getTeacherCourses = async (req, res) => {
 						},
 					],
 				},
+				{
+					model: Level,
+					attributes: ['id', 'title'],
+					as: 'level',
+				},
 			],
 		});
 		if (!courses || courses.length === 0) {

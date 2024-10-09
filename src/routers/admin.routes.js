@@ -9,6 +9,7 @@ const {
 	getAllSubjects,
 	adminAddNewEvent,
 	adminGetEvents,
+	getTeacherCourses,
 } = require('../controllers/admin.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 
@@ -22,5 +23,6 @@ router.get('/get-students', getAllStudents);
 router.get('/get-subjects', getAllSubjects);
 router.post('/add-new-event', protectRoute, adminAddNewEvent);
 router.get('/get-events', adminGetEvents);
+router.get('/get-teacher-levels/:teacherId', getTeacherCourses);
 
 module.exports = router;
