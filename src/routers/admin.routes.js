@@ -2,7 +2,7 @@ const express = require('express');
 
 const {
 	adminSignup,
-	adminCreateLevel,
+	adminCreateLevelWithSubLevels,
 	adminDeleteUser,
 	getAllTeachers,
 	getAllStudents,
@@ -15,7 +15,7 @@ const { protectRoute } = require('../middlewares/auth.mw');
 const router = express.Router();
 
 router.post('/signup', adminSignup);
-router.post('/create-level', protectRoute, adminCreateLevel);
+router.post('/create-level', protectRoute, adminCreateLevelWithSubLevels);
 router.delete('/delete-user/:userId', protectRoute, adminDeleteUser);
 router.get('/get-teachers', getAllTeachers);
 router.get('/get-students', getAllStudents);

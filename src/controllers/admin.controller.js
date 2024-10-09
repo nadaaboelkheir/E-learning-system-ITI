@@ -38,8 +38,8 @@ const adminSignup = async (req, res) => {
 	}
 };
 
-const adminCreateLevel = async (req, res) => {
-	const { title } = req.body;
+const adminCreateLevelWithSubLevels = async (req, res) => {
+	const { title, subLevels } = req.body;
 	try {
 		if (req.role !== 'admin') {
 			return res
@@ -52,9 +52,23 @@ const adminCreateLevel = async (req, res) => {
 			return res.status(400).json({ error: 'المستوى موجود بالفعل' });
 		}
 
-		const level = await Level.create({ title });
+		const parentLevel = await Level.create({
+			title,
+			
+		});
+
+		if (subLevels && Array.isArray(subLevels)) {
+			for (const subLevel of subLevels) {
+				await Level.create({
+					title: subLevel.title,
+					parentLevelId: parentLevel.id,
+				});
+			}
+		}
+
 		res.status(201).json({
-			message: 'تم انشاء المستوى بنجاح',
+			message: 'تم انشاء المستوى بنجاح مع المستويات الفرعية',
+			parentLevel,
 		});
 	} catch (error) {
 		res.status(500).json({ error: error.message });
@@ -174,7 +188,7 @@ const adminGetEvents = async (req, res) => {
 
 module.exports = {
 	adminSignup,
-	adminCreateLevel,
+	adminCreateLevelWithSubLevels,
 	adminDeleteUser,
 	getAllTeachers,
 	getAllStudents,

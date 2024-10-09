@@ -11,16 +11,35 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: false,
 			},
-			courseId: {
+			// courseId: {
+			// 	type: DataTypes.UUID,
+			// 	allowNull: true,
+			// },
+			parentLevelId: {
 				type: DataTypes.UUID,
 				allowNull: true,
+				references: {
+					model: 'Levels',
+					key: 'id',
+				},
+				onUpdate: 'CASCADE',
+				onDelete: 'CASCADE',
 			},
 		},
 		{
 			timestamps: true,
 		},
 	);
+
 	Level.associate = function (models) {
+		// Self-referential association: A level can have many sub-levels
+		Level.hasMany(models.Level, {
+			as: 'subLevels',
+			foreignKey: 'parentLevelId',
+			onDelete: 'CASCADE',
+			onUpdate: 'CASCADE',
+		});
+
 		Level.hasMany(models.Course, {
 			foreignKey: 'levelId',
 			onUpdate: 'CASCADE',

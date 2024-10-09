@@ -4,6 +4,16 @@ const getAllLevels = async (req, res) => {
 	try {
 		const levels = await Level.findAll({
 			attributes: ['id', 'title'],
+			where: {
+				parentLevelId: null,
+			},
+			include: [
+				{
+					model: Level,
+					as: 'subLevels',
+					attributes: ['id', 'title'],
+				},
+			],
 		});
 		if (!levels || levels.length === 0) {
 			return res.status(404).json({ error: 'لا يوجد مستويات' });
@@ -21,11 +31,39 @@ const deleteLevel = async (req, res) => {
 		if (!level) {
 			return res.status(404).json({ error: 'المستوى غير موجود' });
 		}
+
 		await level.destroy();
 		res.status(200).json({ message: 'تم حذف المستوى بنجاح' });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
+};
+const getMainLevelById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const level = await Level.findOne({
+            where: {
+                id,
+                parentLevelId: null,
+            },
+            attributes: ['id', 'title'], 
+            include: [
+                {
+                    model: Level,
+                    as: 'subLevels', 
+                    attributes: ['id', 'title'], 
+                },
+            ],
+        });
+
+        if (!level) {
+            return res.status(404).json({ error: 'المستوى غير موجود' });
+        }
+
+        res.status(200).json({ data: level });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
 const getStudentsInLevel = async (req, res) => {
@@ -51,4 +89,5 @@ module.exports = {
 	getAllLevels,
 	deleteLevel,
 	getStudentsInLevel,
+	getMainLevelById
 };
