@@ -18,6 +18,9 @@ const createFullCourse = async (req, res) => {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 	const teacherId = req.teacher.id;
+	if (!req.teacher.isEmailVerified) {
+		return res.status(401).json({ error: 'البريد الالكتروني غير مفعل' });
+	}
 	const transaction = await sequelize.transaction();
 
 	try {

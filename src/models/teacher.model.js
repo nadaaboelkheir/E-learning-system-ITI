@@ -57,6 +57,10 @@ module.exports = (sequelize, DataTypes) => {
 					max: new Date().getFullYear(),
 				},
 			},
+			isEmailVerified: {
+				type: DataTypes.BOOLEAN,
+				defaultValue: false,
+			},
 			educationalQualification: {
 				type: DataTypes.STRING,
 				allowNull: false,

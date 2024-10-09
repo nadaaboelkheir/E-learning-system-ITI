@@ -31,6 +31,7 @@ module.exports = (sequelize, DataTypes) => {
 				model: 'Admins',
 				key: 'id',
 			},
+			allowNull: false,
 		},
 	});
 

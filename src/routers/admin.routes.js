@@ -10,6 +10,8 @@ const {
 	adminAddNewEvent,
 	adminGetEvents,
 	getTeacherCourses,
+	adminVerifyTeacher,
+	getPendingTeachersAndCourses,
 } = require('../controllers/admin.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 
@@ -24,5 +26,7 @@ router.get('/get-subjects', getAllSubjects);
 router.post('/add-new-event', protectRoute, adminAddNewEvent);
 router.get('/get-events', adminGetEvents);
 router.get('/get-teacher-levels/:teacherId', getTeacherCourses);
+router.patch('/verify-teacher/:teacherId', protectRoute, adminVerifyTeacher);
+router.get('/get-pending-teachers', protectRoute, getPendingTeachersAndCourses);
 
 module.exports = router;

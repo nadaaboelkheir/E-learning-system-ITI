@@ -26,6 +26,10 @@ module.exports = (sequelize, DataTypes) => {
 					key: 'id',
 				},
 			},
+			courseVerify: {
+				type: DataTypes.BOOLEAN,
+				defaultValue: false,
+			},
 			teacherId: {
 				type: DataTypes.UUID,
 				references: {

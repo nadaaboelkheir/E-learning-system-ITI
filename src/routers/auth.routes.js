@@ -2,14 +2,13 @@ const express = require('express');
 const {
 	registerStudent,
 	userLogin,
-	createTeacherByAdmin,
+	createTeacher,
 	logout,
 	verifyOtp,
 	resendOtp,
 } = require('../controllers/auth.controller');
 const studentValidationRules = require('../validations/student.vc');
 const validate = require('../middlewares/validators.mw');
-const { protectRoute } = require('../middlewares/auth.mw');
 const teacherValidationRules = require('../validations/teacher.vc');
 
 const router = express.Router();
@@ -27,8 +26,7 @@ router.post(
 	'/create-teacher',
 	teacherValidationRules(),
 	validate,
-	protectRoute,
-	createTeacherByAdmin,
+	createTeacher,
 );
 router.post('/logout', logout);
 

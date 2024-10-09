@@ -165,7 +165,7 @@ const resendOtp = async (req, res) => {
 	}
 };
 
-const createTeacherByAdmin = async (req, res) => {
+const createTeacher = async (req, res) => {
 	const {
 		firstName,
 		lastName,
@@ -178,12 +178,6 @@ const createTeacherByAdmin = async (req, res) => {
 	} = req.body;
 
 	try {
-		if (req.role !== 'admin') {
-			return res
-				.status(401)
-				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
-		}
-
 		const existingTeacher = await Teacher.findOne({
 			where: { email },
 		});
@@ -223,7 +217,8 @@ const createTeacherByAdmin = async (req, res) => {
 		await newTeacher.update({ walletId: wallet.id });
 
 		return res.status(201).json({
-			message: 'تم تسجيل المدرس بنجاح',
+			message:
+				'تم تسجيل المدرس بنجاح في انتظار موافقة المسئول علي الانضمام للمنصة',
 		});
 	} catch (error) {
 		res.status(500).json({ error: error.message });
@@ -244,6 +239,11 @@ const userLogin = async (req, res) => {
 		const teacher = await Teacher.findOne({
 			where: { email },
 		});
+		if (teacher?.isEmailVerified === false) {
+			return res.status(400).json({
+				error: 'برجاء انتظار موافقة المسئول علي انضمامك للمنصة',
+			});
+		}
 		const admin = await Admin.findOne({ where: { email } });
 
 		const user = student || teacher || admin;
@@ -276,7 +276,7 @@ const logout = async (req, res) => {
 module.exports = {
 	registerStudent,
 	userLogin,
-	createTeacherByAdmin,
+	createTeacher,
 	logout,
 	verifyOtp,
 	resendOtp,
