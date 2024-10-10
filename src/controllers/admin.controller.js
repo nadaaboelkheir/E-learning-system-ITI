@@ -1,5 +1,6 @@
 const { Admin, Wallet, Level, Student, Teacher, Course } = require('../models');
 const bcrypt = require('bcryptjs');
+const { sendVerificationEmail } = require('../utils/mailer');
 
 exports.adminSignup = async (req, res) => {
 	try {
@@ -78,6 +79,30 @@ exports.adminVerifyTeacher = async (req, res) => {
 	}
 };
 
+exports.adminDeletePendingTeacher = async (req, res) => {
+	const { teacherId } = req.params;
+	try {
+		if (req.role !== 'admin') {
+			return res
+				.status(401)
+				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
+		const teacher = await Teacher.findByPk(teacherId);
+		if (!teacher) {
+			return res.status(404).json({ error: 'المدرس غير موجود' });
+		}
+		await teacher.destroy();
+		sendVerificationEmail(
+			teacher.email,
+			'تم حذف حسابك',
+			'تم حذف حسابك من قبل الإدارة',
+		);
+		res.status(200).json({ message: 'تم حذف المدرس بنجاح' });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
 exports.adminVerifyCourse = async (req, res) => {
 	const { courseId } = req.params;
 	try {
@@ -86,11 +111,24 @@ exports.adminVerifyCourse = async (req, res) => {
 				.status(401)
 				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
 		}
-		const course = await Course.findByPk(courseId);
+
+		const course = await Course.findByPk(courseId, {
+			include: [{ model: Teacher, as: 'teacher', attributes: ['email'] }], // Include the teacher's email
+		});
+
 		if (!course) {
 			return res.status(404).json({ error: 'الدورة غير موجودة' });
 		}
+
+		// Update the course verification status
 		await course.update({ courseVerify: true });
+
+		// Send a verification email to the teacher
+		const teacherEmail = course.teacher.email; // Get the teacher's email
+		const subject = 'تم الموافقة على دورتك';
+		const text = `مبروك! تم تفعيل دورتك "${course.title}" من قبل الإدارة. يمكنك الآن الوصول إليها.`;
+		await sendVerificationEmail(teacherEmail, subject, text);
+
 		res.status(200).json({ message: 'تم تفعيل الدورة بنجاح' });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
@@ -110,7 +148,35 @@ exports.adminVerifyTeacher = async (req, res) => {
 			return res.status(404).json({ error: 'المدرس غير موجود' });
 		}
 		await teacher.update({ isEmailVerified: true });
+		const subject = 'تم التحقق من حسابك';
+		const text =
+			'مبروك! تم تفعيل حسابك من قبل الإدارة. يمكنك الآن تسجيل الدخول.';
+		await sendVerificationEmail(teacher.email, subject, text);
 		res.status(200).json({ message: 'تم تفعيل المدرس بنجاح' });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+exports.adminDeletePendingTeacher = async (req, res) => {
+	const { teacherId } = req.params;
+	try {
+		if (req.role !== 'admin') {
+			return res
+				.status(401)
+				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
+		const teacher = await Teacher.findByPk(teacherId);
+		if (!teacher) {
+			return res.status(404).json({ error: 'المدرس غير موجود' });
+		}
+		await teacher.destroy();
+		sendVerificationEmail(
+			teacher.email,
+			'تم حذف حسابك',
+			'تم حذف حسابك من قبل الإدارة',
+		);
+		res.status(200).json({ message: 'تم حذف المدرس بنجاح' });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
@@ -118,17 +184,31 @@ exports.adminVerifyTeacher = async (req, res) => {
 
 exports.adminVerifyCourse = async (req, res) => {
 	const { courseId } = req.params;
+
 	try {
 		if (req.role !== 'admin') {
 			return res
 				.status(401)
 				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
 		}
-		const course = await Course.findByPk(courseId);
+
+		const course = await Course.findByPk(courseId, {
+			include: [{ model: Teacher, as: 'teacher', attributes: ['email'] }], // Include the teacher's email
+		});
+
 		if (!course) {
 			return res.status(404).json({ error: 'الدورة غير موجودة' });
 		}
+
+		// Update the course verification status
 		await course.update({ courseVerify: true });
+
+		// Send a verification email to the teacher
+		const teacherEmail = course.teacher.email; // Get the teacher's email
+		const subject = 'تم الموافقة على دورتك';
+		const text = `مبروك! تم تفعيل دورتك "${course.title}" من قبل الإدارة. يمكنك الآن الوصول إليها.`;
+		await sendVerificationEmail(teacherEmail, subject, text);
+
 		res.status(200).json({ message: 'تم تفعيل الدورة بنجاح' });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
@@ -228,24 +308,33 @@ exports.getPendingTeachersAndCourses = async (req, res) => {
 					attributes: ['id', 'title'],
 					as: 'level',
 				},
+				{
+					model: Teacher,
+					as: 'teacher',
+					attributes: ['id', 'firstName', 'lastName', 'email'],
+				},
 			],
 		});
-		if (!teachers || teachers.length === 0) {
-			return res
-				.status(404)
-				.json({ error: 'لا يوجد مدرسين قيد المراجعة' });
-		}
-		if (!courses || courses.length === 0) {
-			return res
-				.status(404)
-				.json({ error: 'لا يوجد دورات قيد المراجعة' });
-		}
-		res.status(200).json({
+
+		const response = {
 			teacherCount: teachers.length,
 			teacherData: teachers,
 			courseCount: courses.length,
 			courseData: courses,
-		});
+		};
+
+		// Check if there are no teachers
+		if (teachers.length === 0) {
+			response.teacherMessage = 'لا يوجد مدرسين قيد المراجعة';
+		}
+
+		// Check if there are no courses
+		if (courses.length === 0) {
+			response.courseMessage = 'لا يوجد دورات قيد المراجعة';
+		}
+
+		// Always return the response, including pending teachers
+		res.status(200).json(response);
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
@@ -253,15 +342,38 @@ exports.getPendingTeachersAndCourses = async (req, res) => {
 
 exports.deletePendingCourse = async (req, res) => {
 	const { courseId } = req.params;
+
 	try {
-		const course = await Course.findOne({
-			where: { id: courseId, courseVerify: false },
+		if (req.role !== 'admin') {
+			return res
+				.status(401)
+				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
+
+		const course = await Course.findByPk(courseId, {
+			include: [{ model: Teacher, as: 'teacher', attributes: ['email'] }], // Include teacher's email
 		});
+
 		if (!course) {
 			return res.status(404).json({ error: 'الدورة غير موجودة' });
 		}
-		await Course.destroy({ where: { id: courseId } });
-		res.status(200).json({ message: 'تم حذف الدورة بنجاح' });
+
+		if (course.courseVerify) {
+			return res
+				.status(400)
+				.json({ error: 'لا يمكنك حذف دورة تم التحقق منها' });
+		}
+
+		// Send email notification to the teacher before deleting the course
+		const teacherEmail = course.teacher.email;
+		const subject = 'تم حذف دورتك';
+		const text = `عزيزي المعلم،\n\nنأسف لإبلاغك أن دورتك "${course.title}" قد تم حذفها بسبب عدم تحققها. إذا كان لديك أي استفسارات، يرجى الاتصال بالإدارة.\n\nشكرًا لتفهمك.`;
+		await sendVerificationEmail(teacherEmail, subject, text);
+
+		// Delete the course
+		await course.destroy();
+
+		res.status(200).json({ message: 'تم حذف الدورة المعلقة بنجاح' });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}

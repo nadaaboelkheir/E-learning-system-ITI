@@ -38,11 +38,11 @@ module.exports = (sequelize, DataTypes) => {
 				},
 			},
 			price: {
-				type: DataTypes.FLOAT,
+				type: DataTypes.INTEGER,
 				allowNull: false,
 			},
 			discountedPrice: {
-				type: DataTypes.FLOAT,
+				type: DataTypes.INTEGER,
 				allowNull: true,
 			},
 		},

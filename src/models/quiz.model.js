@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
 				allowNull: false,
 			},
 			Duration: {
-				type: DataTypes.STRING,
+				type: DataTypes.INTEGER,
 				allowNull: false,
 			},
 			sectionId: {
