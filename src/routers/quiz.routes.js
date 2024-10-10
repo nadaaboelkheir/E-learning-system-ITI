@@ -3,13 +3,22 @@ const {
 	createQuiz,
 	getQuestionsInQuiz,
 	getAllQuizzes,
+	takeQuiz,
+	getStudentQuizzes,
+    getQuizForSection
 } = require('../controllers/quiz.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 
-const router = express.Router();
+const teacherQuizRouter = express.Router();
 
-router.post('/create-quiz', protectRoute, createQuiz);
-router.get('/get-questions/:id', getQuestionsInQuiz);
-router.get('/get-all-quizzes', getAllQuizzes);
+teacherQuizRouter.post('/', protectRoute, createQuiz);
 
-module.exports = router;
+const studentQuizRouter = express.Router();
+studentQuizRouter.post('/take-quiz', takeQuiz);
+studentQuizRouter.get('/quizzes/:studentId', getStudentQuizzes);
+studentQuizRouter.get('/questions/:id', getQuestionsInQuiz);
+studentQuizRouter.get('/questions/section/:sectionId', getQuizForSection);
+const adminQuizRouter = express.Router();
+adminQuizRouter.get('/all-quizzes', getAllQuizzes);
+
+module.exports = { teacherQuizRouter, studentQuizRouter, adminQuizRouter };

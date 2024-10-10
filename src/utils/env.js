@@ -15,4 +15,11 @@ module.exports = {
 	PAYMOB_FRAME_ONE: process.env.PAYMOB_FRAME_ONE,
 	JWT_SECRET: process.env.JWT_SECRET,
 	JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+	EMAIL_USER: process.env.EMAIL_USER,
+	EMAIL_PASS: process.env.EMAIL_PASS,
+	CLIENT_ID: process.env.CLIENT_ID,
+	CLIENT_SECRET: process.env.CLIENT_SECRET,
+	REDIRECT_URL: process.env.REDIRECT_URL,
+	REFRESH_TOKEN: process.env.REFRESH_TOKEN,
+	ACCESS_TOKEN: process.env.ACCESS_TOKEN,
 };

@@ -19,7 +19,16 @@ module.exports = (sequelize, DataTypes) => {
 					key: 'id',
 				},
 			},
-
+			parentLevelId: {
+				type: DataTypes.UUID,
+				allowNull: true,
+				references: {
+					model: 'Levels',
+					key: 'id',
+				},
+				onUpdate: 'CASCADE',
+				onDelete: 'CASCADE',
+			},
 			teacherId: {
 				type: DataTypes.UUID,
 				allowNull: true,
@@ -39,6 +48,12 @@ module.exports = (sequelize, DataTypes) => {
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 			as: 'courses',
+		});
+		Level.hasMany(models.Level, {
+			as: 'subLevels',
+			foreignKey: 'parentLevelId',
+			onDelete: 'CASCADE',
+			onUpdate: 'CASCADE',
 		});
 
 		Level.hasMany(models.Student, {

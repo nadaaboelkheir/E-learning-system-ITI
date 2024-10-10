@@ -2,7 +2,7 @@ const { Student, Teacher, Admin, Wallet, Level, Course } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const getCurrentUser = async (req, res) => {
+exports.getCurrentUser = async (req, res) => {
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
 	try {
 		let user =
@@ -79,7 +79,7 @@ const getCurrentUser = async (req, res) => {
 	}
 };
 
-const updateUserProfile = async (req, res) => {
+exports.updateUserProfile = async (req, res) => {
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
 	try {
 		const user =
@@ -103,7 +103,7 @@ const updateUserProfile = async (req, res) => {
 	}
 };
 
-const getAllUsers = async (req, res) => {
+exports.getAllUsers = async (req, res) => {
 	try {
 		const admins = await Admin.findAll({
 			attributes: ['id', 'name', 'email', 'role'],
@@ -145,7 +145,7 @@ const getAllUsers = async (req, res) => {
 	}
 };
 
-const getUserById = async (req, res) => {
+exports.getUserById = async (req, res) => {
 	const { id } = req.params;
 	try {
 		// Search in admins
@@ -262,27 +262,9 @@ const getUserById = async (req, res) => {
 	}
 };
 
-const getStudentByNationalId = async (req, res) => {
-	const { nationalId } = req.params;
-	try {
-		const student = await Student.findOne({ where: { nationalId } });
-		if (student) {
-			const {
-				password,
-				createdAt,
-				updatedAt,
-				refreshToken,
-				...safeStudent
-			} = student.dataValues;
-			return res.status(200).json(safeStudent);
-		}
-		return res.status(404).json({ message: 'هذا الطالب غير موجود' });
-	} catch (error) {
-		return res.status(500).json({ error: error.message });
-	}
-};
 
-const resetPassword = async (req, res) => {
+
+exports.resetPassword = async (req, res) => {
 	const { oldPassword, newPassword } = req.body;
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
 
@@ -308,7 +290,7 @@ const resetPassword = async (req, res) => {
 	}
 };
 
-const forgetPassword = async (req, res) => {
+exports.forgetPassword = async (req, res) => {
 	const { email } = req.body;
 	try {
 		const user =
@@ -329,14 +311,4 @@ const forgetPassword = async (req, res) => {
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
-};
-
-module.exports = {
-	updateUserProfile,
-	getCurrentUser,
-	getAllUsers,
-	getUserById,
-	getStudentByNationalId,
-	resetPassword,
-	forgetPassword,
 };

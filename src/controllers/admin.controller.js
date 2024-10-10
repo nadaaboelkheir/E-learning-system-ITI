@@ -1,15 +1,7 @@
-const {
-	Admin,
-	Wallet,
-	Level,
-	Student,
-	Teacher,
-	Event,
-	Course,
-} = require('../models');
+const { Admin, Wallet, Level, Student, Teacher, Course } = require('../models');
 const bcrypt = require('bcryptjs');
 
-const adminSignup = async (req, res) => {
+exports.adminSignup = async (req, res) => {
 	try {
 		const { name, email, password } = req.body;
 
@@ -46,30 +38,7 @@ const adminSignup = async (req, res) => {
 	}
 };
 
-const adminCreateLevel = async (req, res) => {
-	const { title } = req.body;
-	try {
-		if (req.role !== 'admin') {
-			return res
-				.status(401)
-				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
-		}
-
-		const existingLevel = await Level.findOne({ where: { title } });
-		if (existingLevel) {
-			return res.status(400).json({ error: 'المستوى موجود بالفعل' });
-		}
-
-		const level = await Level.create({ title });
-		res.status(201).json({
-			message: 'تم انشاء المستوى بنجاح',
-		});
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
-};
-
-const adminDeleteUser = async (req, res) => {
+exports.deleteUser = async (req, res) => {
 	const { userId } = req.params;
 	try {
 		if (req.role !== 'admin') {
@@ -90,7 +59,7 @@ const adminDeleteUser = async (req, res) => {
 	}
 };
 
-const adminVerifyTeacher = async (req, res) => {
+exports.adminVerifyTeacher = async (req, res) => {
 	const { teacherId } = req.params;
 	try {
 		if (req.role !== 'admin') {
@@ -109,7 +78,7 @@ const adminVerifyTeacher = async (req, res) => {
 	}
 };
 
-const adminVerifyCourse = async (req, res) => {
+exports.adminVerifyCourse = async (req, res) => {
 	const { courseId } = req.params;
 	try {
 		if (req.role !== 'admin') {
@@ -128,7 +97,45 @@ const adminVerifyCourse = async (req, res) => {
 	}
 };
 
-const getAllTeachers = async (req, res) => {
+exports.adminVerifyTeacher = async (req, res) => {
+	const { teacherId } = req.params;
+	try {
+		if (req.role !== 'admin') {
+			return res
+				.status(401)
+				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
+		const teacher = await Teacher.findByPk(teacherId);
+		if (!teacher) {
+			return res.status(404).json({ error: 'المدرس غير موجود' });
+		}
+		await teacher.update({ isEmailVerified: true });
+		res.status(200).json({ message: 'تم تفعيل المدرس بنجاح' });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+exports.adminVerifyCourse = async (req, res) => {
+	const { courseId } = req.params;
+	try {
+		if (req.role !== 'admin') {
+			return res
+				.status(401)
+				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
+		const course = await Course.findByPk(courseId);
+		if (!course) {
+			return res.status(404).json({ error: 'الدورة غير موجودة' });
+		}
+		await course.update({ courseVerify: true });
+		res.status(200).json({ message: 'تم تفعيل الدورة بنجاح' });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+exports.getAllTeachers = async (req, res) => {
 	try {
 		const teachers = await Teacher.findAll({
 			where: { isEmailVerified: true },
@@ -156,7 +163,7 @@ const getAllTeachers = async (req, res) => {
 	}
 };
 
-const getAllStudents = async (req, res) => {
+exports.getAllStudents = async (req, res) => {
 	try {
 		const students = await Student.findAll({
 			where: { isEmailVerified: true },
@@ -184,7 +191,7 @@ const getAllStudents = async (req, res) => {
 	}
 };
 
-const getAllSubjects = async (req, res) => {
+exports.getAllSubjects = async (req, res) => {
 	try {
 		const specializations = await Teacher.findAll({
 			attributes: ['specialization'],
@@ -201,71 +208,7 @@ const getAllSubjects = async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
-
-const adminAddNewEvent = async (req, res) => {
-	const { title, description, start, end, eventUrl } = req.body;
-	const adminId = req.userId;
-	try {
-		if (req.role !== 'admin') {
-			return res
-				.status(401)
-				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
-		}
-		const event = await Event.create({
-			title,
-			description,
-			start,
-			end,
-			eventUrl,
-			adminId,
-		});
-		res.status(201).json({
-			message: 'تم انشاء الحدث بنجاح',
-		});
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
-};
-
-const adminGetEvents = async (req, res) => {
-	try {
-		const events = await Event.findAll();
-		if (!events || events.length === 0) {
-			return res.status(404).json({ error: 'لا يوجد أحداث للعرض' });
-		}
-		res.status(200).json({ data: events });
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
-};
-
-const getTeacherCourses = async (req, res) => {
-	const { teacherId } = req.params;
-	try {
-		const teacher = await Teacher.findOne({ where: { id: teacherId } });
-		if (!teacher) {
-			return res.status(404).json({ error: 'المدرس غير موجود' });
-		}
-		const courses = await Course.findAll({
-			where: { teacherId, courseVerify: true },
-			include: [
-				{
-					model: Level,
-					attributes: ['id', 'title'],
-					as: 'level',
-				},
-			],
-		});
-		if (!courses || courses.length === 0) {
-			return res.status(404).json({ error: 'لا يوجد دورات لهذا المدرس' });
-		}
-		return res.status(200).json({ count: courses.length, data: courses });
-	} catch (error) {
-		return res.status(500).json({ error: error.message });
-	}
-};
-
-const getPendingTeachersAndCourses = async (req, res) => {
+exports.getPendingTeachersAndCourses = async (req, res) => {
 	try {
 		const teachers = await Teacher.findAll({
 			where: { isEmailVerified: false },
@@ -308,7 +251,7 @@ const getPendingTeachersAndCourses = async (req, res) => {
 	}
 };
 
-const deletePendingCourse = async (req, res) => {
+exports.deletePendingCourse = async (req, res) => {
 	const { courseId } = req.params;
 	try {
 		const course = await Course.findOne({
@@ -323,19 +266,44 @@ const deletePendingCourse = async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
-
-module.exports = {
-	adminSignup,
-	adminCreateLevel,
-	adminDeleteUser,
-	getAllTeachers,
-	getAllStudents,
-	getAllSubjects,
-	adminAddNewEvent,
-	adminGetEvents,
-	getTeacherCourses,
-	adminVerifyTeacher,
-	getPendingTeachersAndCourses,
-	adminVerifyCourse,
-	deletePendingCourse,
+exports.getTeacherCourses = async (req, res) => {
+	const { teacherId } = req.params;
+	try {
+		const teacher = await Teacher.findOne({ where: { id: teacherId } });
+		if (!teacher) {
+			return res.status(404).json({ error: 'المدرس غير موجود' });
+		}
+		const courses = await Course.findAll({
+			where: { teacherId },
+			include: [
+				{
+					model: Section,
+					include: [
+						{
+							model: Lesson,
+							include: [
+								{
+									model: Pdf,
+								},
+								{
+									model: Video,
+								},
+							],
+						},
+					],
+				},
+				{
+					model: Level,
+					attributes: ['id', 'title'],
+					as: 'level',
+				},
+			],
+		});
+		if (!courses || courses.length === 0) {
+			return res.status(404).json({ error: 'لا يوجد دورات لهذا المدرس' });
+		}
+		return res.status(200).json({ count: courses.length, data: courses });
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
 };

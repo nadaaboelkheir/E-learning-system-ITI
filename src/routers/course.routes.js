@@ -8,25 +8,40 @@ const {
 	getCourseDetails,
 	getAllCourses,
 	getStudentsInCourse,
+	buyCourseWithWallet,
+	getStudentEnrolledCourses,
 } = require('../controllers/course.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
 const validate = require('../middlewares/validators.mw');
+const router= express.Router();
+const teacherCourseRouter = express.Router();
 
-const router = express.Router();
-
-router.post(
-	'/create-full-course',
+teacherCourseRouter.post(
+	'/',
 	courseValidationRules(),
 	validate,
 	protectRoute,
 	createFullCourse,
 );
-router.patch('/update-course/:courseId', protectRoute, updateCourse);
-router.delete('/delete-course/:id', protectRoute, deleteCourse);
-router.get('/teacher-courses/:teacherId', getTeacherCourses);
-router.get('/course-details/:id', getCourseDetails);
-router.get('/all-courses', getAllCourses);
+teacherCourseRouter.patch('/:courseId', protectRoute, updateCourse);
+teacherCourseRouter.delete('/:courseId', protectRoute, deleteCourse);
+
+const userCourseRouter = express.Router();
+userCourseRouter.get('/teacher-courses/:teacherId', getTeacherCourses);
+userCourseRouter.get('/details/:id', getCourseDetails);
+userCourseRouter.get('/all-courses', getAllCourses);
 router.get('/students-in-course/:courseId', getStudentsInCourse);
 
-module.exports = router;
+
+// student
+const studentCoursesRouter = express.Router();
+studentCoursesRouter
+	.post('/buy-course', buyCourseWithWallet)
+	.get('/enrolled-courses/:studentId', getStudentEnrolledCourses);
+
+module.exports = {
+	studentCoursesRouter,
+	userCourseRouter,
+	teacherCourseRouter,
+};

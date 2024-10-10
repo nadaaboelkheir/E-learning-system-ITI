@@ -1,9 +1,54 @@
-const { Level, Student, Teacher, Course } = require('../models');
+const { Level, Student } = require('../models');
+exports.createLevelWithSubLevels = async (req, res) => {
+	const { title, subLevels } = req.body;
+	try {
+		if (req.role !== 'admin') {
+			return res
+				.status(401)
+				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
 
-const getAllLevels = async (req, res) => {
+		const existingLevel = await Level.findOne({ where: { title } });
+		if (existingLevel) {
+			return res.status(400).json({ error: 'المستوى موجود بالفعل' });
+		}
+
+		const parentLevel = await Level.create({
+			title,
+		});
+
+		if (subLevels && Array.isArray(subLevels)) {
+			for (const subLevel of subLevels) {
+				await Level.create({
+					title: subLevel.title,
+					parentLevelId: parentLevel.id,
+				});
+			}
+		}
+
+		res.status(201).json({
+			message: 'تم انشاء المستوى بنجاح مع المستويات الفرعية',
+			parentLevel,
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+exports.getAllLevels = async (req, res) => {
 	try {
 		const levels = await Level.findAll({
 			attributes: ['id', 'title'],
+			where: {
+				parentLevelId: null,
+			},
+			include: [
+				{
+					model: Level,
+					as: 'subLevels',
+					attributes: ['id', 'title'],
+				},
+			],
 		});
 		if (!levels || levels.length === 0) {
 			return res.status(404).json({ error: 'لا يوجد مستويات' });
@@ -14,21 +59,76 @@ const getAllLevels = async (req, res) => {
 	}
 };
 
-const deleteLevel = async (req, res) => {
+exports.deleteLevel = async (req, res) => {
 	const { id } = req.params;
 	try {
 		const level = await Level.findByPk(id);
 		if (!level) {
 			return res.status(404).json({ error: 'المستوى غير موجود' });
 		}
+
 		await level.destroy();
 		res.status(200).json({ message: 'تم حذف المستوى بنجاح' });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
 };
+exports.getMainLevelById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const level = await Level.findOne({
+            where: {
+                id,
+                parentLevelId: null,
+            },
+            attributes: ['id', 'title'], 
+            include: [
+                {
+                    model: Level,
+                    as: 'subLevels', 
+                    attributes: ['id', 'title'], 
+                },
+            ],
+        });
 
-const getStudentsInLevel = async (req, res) => {
+        if (!level) {
+            return res.status(404).json({ error: 'المستوى غير موجود' });
+        }
+
+        res.status(200).json({ data: level });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+exports.getMainLevelById = async (req, res) => {
+	const { id } = req.params;
+	try {
+		const level = await Level.findOne({
+			where: {
+				id,
+				parentLevelId: null,
+			},
+			attributes: ['id', 'title'],
+			include: [
+				{
+					model: Level,
+					as: 'subLevels',
+					attributes: ['id', 'title'],
+				},
+			],
+		});
+
+		if (!level) {
+			return res.status(404).json({ error: 'المستوى غير موجود' });
+		}
+
+		res.status(200).json({ data: level });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+exports.getStudentsInLevel = async (req, res) => {
 	const { levelId } = req.params;
 	try {
 		const level = await Level.findOne({
@@ -56,7 +156,7 @@ const getStudentsInLevel = async (req, res) => {
 	}
 };
 
-const getTeacherLevels = async (req, res) => {
+exports.getTeacherLevels = async (req, res) => {
 	const { teacherId } = req.params;
 
 	try {
@@ -94,7 +194,7 @@ const getTeacherLevels = async (req, res) => {
 	}
 };
 
-const getCoursesInLevel = async (req, res) => {
+exports.getCoursesInLevel = async (req, res) => {
 	const { levelId } = req.params;
 	try {
 		const level = await Level.findOne({
@@ -120,12 +220,4 @@ const getCoursesInLevel = async (req, res) => {
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
-};
-
-module.exports = {
-	getAllLevels,
-	deleteLevel,
-	getStudentsInLevel,
-	getTeacherLevels,
-	getCoursesInLevel,
 };

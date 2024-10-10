@@ -6,7 +6,7 @@ const { sendVerificationEmail, generateOtp } = require('../utils/mailer');
 const { generateTokenAndSetCookie } = require('../utils/generateToken');
 const { Op } = require('sequelize');
 
-const registerStudent = async (req, res) => {
+exports.registerStudent = async (req, res) => {
 	const {
 		firstName,
 		lastName,
@@ -31,7 +31,7 @@ const registerStudent = async (req, res) => {
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 		const otp = generateOtp();
-		const otpExpiry = Date.now() + 2 * 60 * 1000;
+		const otpExpiry = Date.now() + 6 * 60 * 1000;
 
 		const newStudent = await Student.create({
 			firstName,
@@ -70,7 +70,7 @@ const registerStudent = async (req, res) => {
 	}
 };
 
-const verifyOtp = async (req, res) => {
+exports.verifyOtp = async (req, res) => {
 	try {
 		const { email, otp: sessionOtp, otpExpiry } = req.session;
 		const { otp } = req.body;
@@ -94,6 +94,9 @@ const verifyOtp = async (req, res) => {
 
 		// Check if OTP is expired
 		if (Date.now() > otpExpiry) {
+			return res.status(400).json({
+				error: 'لقد انتهت صلاحية رمز التحقق. يرجى المحاولة مرة أخرى',
+			});
 			return res.status(400).json({
 				error: 'لقد انتهت صلاحية رمز التحقق. يرجى المحاولة مرة أخرى',
 			});
@@ -121,7 +124,7 @@ const verifyOtp = async (req, res) => {
 	}
 };
 
-const resendOtp = async (req, res) => {
+exports.resendOtp = async (req, res) => {
 	try {
 		const { email } = req.session;
 
@@ -165,7 +168,7 @@ const resendOtp = async (req, res) => {
 	}
 };
 
-const createTeacher = async (req, res) => {
+exports.createTeacher = async (req, res) => {
 	const {
 		firstName,
 		lastName,
@@ -225,11 +228,11 @@ const createTeacher = async (req, res) => {
 	}
 };
 
-const userLogin = async (req, res) => {
+exports.userLogin = async (req, res) => {
 	const { email, password } = req.body;
 	try {
 		const student = await Student.findOne({
-			where: { email },
+			where: { email: email },
 		});
 		if (student?.isEmailVerified === false) {
 			return res.status(400).json({
@@ -237,7 +240,7 @@ const userLogin = async (req, res) => {
 			});
 		}
 		const teacher = await Teacher.findOne({
-			where: { email },
+			where: { email: email },
 		});
 		if (teacher?.isEmailVerified === false) {
 			return res.status(400).json({
@@ -259,25 +262,14 @@ const userLogin = async (req, res) => {
 		const accessToken = jwt.sign({ id: user.id, role }, JWT_SECRET, {
 			expiresIn: '1h',
 		});
-		return res
-			.status(200)
-			.json({ message: 'تم تسجيل الدخول بنجاح', accessToken });
+		return res.status(200).json({ message: 'تم تسجيل الدخول بنجاح', role });
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
 };
 
-const logout = async (req, res) => {
+exports.logout = async (req, res) => {
 	res.clearCookie('access-token');
 	res.clearCookie('refresh-token');
 	res.status(200).json({ message: 'تم تسجيل الخروج بنجاح' });
-};
-
-module.exports = {
-	registerStudent,
-	userLogin,
-	createTeacher,
-	logout,
-	verifyOtp,
-	resendOtp,
 };

@@ -5,20 +5,26 @@ const {
 	getUserById,
 	getCurrentUser,
 	updateUserProfile,
-	getStudentByNationalId,
 	resetPassword,
 	forgetPassword,
 } = require('../controllers/user.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
-
+const { userAuthRouter } = require('./auth.routes');
+const { userCourseRouter } = require('./course.routes');
+const { userEventRouter } = require('./event.routes');
+const { userLevelRouter } = require('./level.routes');
 const router = express.Router();
 
-router.get('/current-user', protectRoute, getCurrentUser);
+router.get('/current', protectRoute, getCurrentUser);
 router.get('/:id', getUserById);
 router.get('/', getAllUsers);
-router.patch('/update-user-profile', protectRoute, updateUserProfile);
-router.get('/student/:nationalId', getStudentByNationalId);
+router.patch('/profile', protectRoute, updateUserProfile);
 router.post('/reset-password', protectRoute, resetPassword);
 router.post('/forget-password', forgetPassword);
 
+// User routes
+router.use('/auth', userAuthRouter);
+router.use('/courses', userCourseRouter);
+router.use('/events', userEventRouter);
+router.use('/levels', userLevelRouter);
 module.exports = router;

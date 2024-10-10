@@ -2,13 +2,10 @@ const express = require('express');
 
 const {
 	adminSignup,
-	adminCreateLevel,
-	adminDeleteUser,
+	deleteUser,
 	getAllTeachers,
 	getAllStudents,
 	getAllSubjects,
-	adminAddNewEvent,
-	adminGetEvents,
 	getTeacherCourses,
 	adminVerifyTeacher,
 	getPendingTeachersAndCourses,
@@ -16,29 +13,33 @@ const {
 	deletePendingCourse,
 } = require('../controllers/admin.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
+const { adminLevelRouter } = require('./level.routes');
+const {adminEventRouter} = require('./event.routes');
+const {adminQuizRouter} = require('./quiz.routes');
 
 const router = express.Router();
 
 router.post('/signup', adminSignup);
-router.post('/create-level', protectRoute, adminCreateLevel);
-router.delete('/delete-user/:userId', protectRoute, adminDeleteUser);
-router.get('/get-teachers', getAllTeachers);
-router.get('/get-students', getAllStudents);
-router.get('/get-subjects', getAllSubjects);
-router.post('/add-new-event', protectRoute, adminAddNewEvent);
-router.get('/get-events', adminGetEvents);
-router.get('/get-teacher-levels/:teacherId', getTeacherCourses);
+router.delete('/user/:userId', protectRoute, deleteUser);
+router.get('/teachers', getAllTeachers);
+router.get('/students', getAllStudents);
+router.get('/subjects', getAllSubjects);
+router.use('/level', protectRoute,adminLevelRouter);
+router.use('/event', protectRoute,adminEventRouter);
+router.get('/teacher-levels/:teacherId', getTeacherCourses);
 router.patch('/verify-teacher/:teacherId', protectRoute, adminVerifyTeacher);
 router.get(
-	'/get-pending-teachers-courses',
+	'/pending-teachers-courses',
 	protectRoute,
 	getPendingTeachersAndCourses,
 );
 router.patch('/verify-course/:courseId', protectRoute, adminVerifyCourse);
 router.delete(
-	'/delete-pending-course/:courseId',
+	'/pending-course/:courseId',
 	protectRoute,
 	deletePendingCourse,
 );
+
+router.use('/quiz', protectRoute, adminQuizRouter);
 
 module.exports = router;
