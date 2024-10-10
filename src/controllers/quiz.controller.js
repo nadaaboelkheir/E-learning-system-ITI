@@ -1,4 +1,14 @@
-const { sequelize, Quiz, Question, Answer } = require('../models');
+const {
+	sequelize,
+	Quiz,
+	Question,
+	Answer,
+	QuizAttempt,
+	Student,
+	Enrollment,
+	Course,
+} = require('../models');
+const AsyncHandler = require('express-async-handler');
 
 exports.createQuiz = async (req, res) => {
 	const { title, Duration, sectionId, questions } = req.body;
@@ -48,4 +58,105 @@ exports.createQuiz = async (req, res) => {
 	}
 };
 
+// student
+exports.takeQuiz = AsyncHandler(async (req, res) => {
+	const { studentId, courseId, quizId, answers } = req.body;
 
+	const student = await Student.findOne({ where: { id: studentId } });
+	if (!student) {
+		return res.status(404).json({ message: 'Student not found' });
+	}
+	const course = await Course.findOne({ where: { id: courseId } });
+	if (!course) {
+		return res.status(404).json({ message: 'Course not found' });
+	}
+	const quiz = await Quiz.findOne({ where: { id: quizId } });
+	if (!quiz) {
+		return res.status(404).json({ message: 'Quiz not found' });
+	}
+	const enrollment = await Enrollment.findOne({
+		where: {
+			studentId: studentId,
+			courseId: courseId,
+		},
+	});
+	if (!enrollment) {
+		return res
+			.status(403)
+			.json({ message: 'You are not enrolled in this course.' });
+	}
+	const existingAttempt = await QuizAttempt.findOne({
+		where: { studentId, quizId },
+	});
+	if (existingAttempt) {
+		return res
+			.status(403)
+			.json({ message: 'You have already taken this quiz.' });
+	}
+
+	const questions = await Question.findAll({
+		where: { quizId },
+		include: [{ model: Answer }],
+	});
+
+	let totalScore = 0;
+	let maxScore = 0;
+
+	for (const question of questions) {
+		const studentAnswer = answers.find((a) => a.questionId === question.id);
+		console.log(question.Answers);
+		const correctAnswer = question.Answers.find((ans) => ans.isCorrect);
+
+		if (studentAnswer && studentAnswer.answerId === correctAnswer.id) {
+			totalScore += question.mark;
+		}
+
+		maxScore += question.mark;
+	}
+
+	await QuizAttempt.create({
+		studentId,
+		quizId,
+		score: totalScore,
+		maxScore,
+	});
+
+	res.status(200).json({
+		message: 'Quiz submitted successfully',
+		score: totalScore,
+		maxScore,
+	});
+});
+exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
+	const { studentId } = req.params;
+
+	const student = await Student.findOne({ where: { id: studentId } });
+	if (!student) {
+		return res.status(404).json({ message: 'Student not found' });
+	}
+
+	const quizAttempts = await QuizAttempt.findAll({
+		where: { studentId },
+		include: [
+			{
+				model: Quiz,
+				attributes: ['title', 'Duration'],
+			},
+		],
+	});
+
+	if (!quizAttempts || quizAttempts.length === 0) {
+		return res
+			.status(404)
+			.json({ message: 'No quizzes taken by this student.' });
+	}
+
+	res.status(200).json({
+		quizzes: quizAttempts.map((attempt) => ({
+			quizTitle: attempt.Quiz.title,
+			duration: attempt.Quiz.Duration,
+			score: attempt.score,
+			maxScore: attempt.maxScore,
+		})),
+	});
+});

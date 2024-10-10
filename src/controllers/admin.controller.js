@@ -38,43 +38,7 @@ exports.adminSignup = async (req, res) => {
 	}
 };
 
-exports.adminCreateLevelWithSubLevels = async (req, res) => {
-	const { title, subLevels } = req.body;
-	try {
-		if (req.role !== 'admin') {
-			return res
-				.status(401)
-				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
-		}
-
-		const existingLevel = await Level.findOne({ where: { title } });
-		if (existingLevel) {
-			return res.status(400).json({ error: 'المستوى موجود بالفعل' });
-		}
-
-		const parentLevel = await Level.create({
-			title,
-		});
-
-		if (subLevels && Array.isArray(subLevels)) {
-			for (const subLevel of subLevels) {
-				await Level.create({
-					title: subLevel.title,
-					parentLevelId: parentLevel.id,
-				});
-			}
-		}
-
-		res.status(201).json({
-			message: 'تم انشاء المستوى بنجاح مع المستويات الفرعية',
-			parentLevel,
-		});
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
-};
-
-exports.adminDeleteUser = async (req, res) => {
+exports.deleteUser = async (req, res) => {
 	const { userId } = req.params;
 	try {
 		if (req.role !== 'admin') {
@@ -151,36 +115,4 @@ exports.getAllSubjects = async (req, res) => {
 	}
 };
 
-exports.adminAddNewEvent = async (req, res) => {
-	const { title, description, start, end } = req.body;
-	try {
-		if (req.role !== 'admin') {
-			return res
-				.status(401)
-				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
-		}
-		const event = await Event.create({
-			title,
-			description,
-			start,
-			end,
-		});
-		res.status(201).json({
-			message: 'تم انشاء الحدث بنجاح',
-		});
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
-};
 
-exports.adminGetEvents = async (req, res) => {
-	try {
-		const events = await Event.findAll();
-		if (!events || events.length === 0) {
-			return res.status(404).json({ error: 'لا يوجد أحداث للعرض' });
-		}
-		res.status(200).json({ data: events });
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
-};

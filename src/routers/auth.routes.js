@@ -12,24 +12,28 @@ const validate = require('../middlewares/validators.mw');
 const { protectRoute } = require('../middlewares/auth.mw');
 const teacherValidationRules = require('../validations/teacher.vc');
 
-const router = express.Router();
+const studentAuthRouter = express.Router();
 
-router.post(
-	'/create-student',
+studentAuthRouter.post(
+	'/signup',
 	studentValidationRules(),
 	validate,
 	registerStudent,
 );
-router.post('/verify-otp', verifyOtp);
-router.post('/resend-otp', resendOtp);
-router.post('/login-user', userLogin);
-router.post(
-	'/create-teacher',
+studentAuthRouter.post('/verify-otp', verifyOtp);
+studentAuthRouter.post('/resend-otp', resendOtp);
+const userAuthRouter = express.Router();
+
+userAuthRouter.post('/login-user', userLogin);
+
+const teacherAuthRouter = express.Router();
+
+teacherAuthRouter.post(
+	'/signup',
 	teacherValidationRules(),
 	validate,
-	protectRoute,
 	createTeacherByAdmin,
 );
-router.post('/logout', logout);
+userAuthRouter.post('/logout', logout);
 
-module.exports = router;
+module.exports = { userAuthRouter, studentAuthRouter, teacherAuthRouter };

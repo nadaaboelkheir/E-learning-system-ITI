@@ -6,8 +6,12 @@ const {
 	Video,
 	sequelize,
 	Teacher,
+	Student,
+	Wallet,
+	Enrollment,
+   Transaction
 } = require('../models');
-
+const AsyncHandler = require('express-async-handler');
 exports.createFullCourse = async (req, res) => {
 	const { title, description, levelId, price, sections } = req.body;
 	if (req.role !== 'teacher') {
@@ -412,4 +416,128 @@ exports.getAllCourses = async (req, res) => {
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
-};
+}; 
+
+// student 
+exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
+	const { studentId, courseId, adminId } = req.body;
+
+	const student = await Student.findOne({ where: { id: studentId } });
+	if (!student) {
+		return res.status(404).json({ message: 'Student not found' });
+	}
+	const existingEnrollment = await Enrollment.findOne({
+		where: { studentId, courseId },
+	});
+
+	if (existingEnrollment) {
+		return res
+			.status(400)
+			.json({ message: 'Student is already enrolled in this course' });
+	}
+
+	const wallet = await Wallet.findOne({
+		where: { id: student.walletId, walletableType: 'Student' },
+	});
+	if (!wallet) {
+		return res.status(404).json({ message: 'Wallet not found' });
+	}
+
+	const course = await Course.findOne({ where: { id: courseId } });
+	if (!course) {
+		return res.status(404).json({ message: 'Course not found' });
+	}
+
+	if (wallet.balance < course.price) {
+		return res
+			.status(400)
+			.json({ message: 'Insufficient wallet balance to buy the course' });
+	}
+
+	const teacherShare = course.price * 0.8;
+	const adminShare = course.price * 0.2;
+
+	const teacher = await Teacher.findOne({ where: { id: course.teacherId } });
+	const admin = await Admin.findOne({ where: { id: adminId } });
+
+	if (!teacher || !admin) {
+		return res.status(500).json({ message: 'Teacher or Admin not found' });
+	}
+
+	const teacherWallet = await Wallet.findOne({
+		where: { walletableId: teacher.id, walletableType: 'Teacher' },
+	});
+	const adminWallet = await Wallet.findOne({
+		where: { walletableId: admin.id, walletableType: 'Admin' },
+	});
+
+	if (!teacherWallet || !adminWallet) {
+		return res
+			.status(500)
+			.json({ message: 'Teacher or Admin wallet not found' });
+	}
+	const updatedBalance = wallet.balance - course.price;
+	await wallet.update({ balance: updatedBalance });
+
+	await teacherWallet.update({
+		balance: teacherWallet.balance + teacherShare,
+	});
+	await adminWallet.update({ balance: adminWallet.balance + adminShare });
+	const enrollment = await Enrollment.create({
+		studentId: student.id,
+		courseId: course.id,
+		price: course.price,
+		enrollDate: new Date(),
+	});
+
+	const transactionDetails = {
+		amount: course.price,
+		currency: 'EGP',
+		walletId: wallet.id,
+		type: 'completed',
+		transactionDate: new Date(),
+	};
+
+	const transaction = await Transaction.create(transactionDetails);
+
+	return res.status(200).json({
+		message: 'Course purchased successfully, wallet updated',
+		transaction,
+		enrollment,
+	});
+});
+exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
+	const { studentId } = req.params;
+
+	const student = await Student.findOne({ where: { id: studentId } });
+	if (!student) {
+		return res.status(404).json({ message: 'Student not found' });
+	}
+
+	const enrollments = await Enrollment.findAll({
+		where: { studentId },
+		include: [
+			{
+				model: Course,
+
+				attributes: ['id', 'title', 'description', 'price', 'image'],
+			},
+		],
+	});
+
+	if (!enrollments.length) {
+		return res.status(200).json({
+			message: 'No courses found for the student',
+			courses: [],
+		});
+	}
+	console.log(enrollments);
+
+	const courses = enrollments.map((enrollment) => enrollment.Course);
+
+	return res.status(200).json({
+		message: 'Student courses retrieved successfully',
+		courses,
+		numberOfCourses: courses.length,
+	});
+});

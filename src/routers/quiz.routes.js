@@ -1,9 +1,14 @@
 const express = require('express');
-const { createQuiz } = require('../controllers/quiz.controller');
+const { createQuiz ,takeQuiz,getStudentQuizzes} = require('../controllers/quiz.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 
-const router = express.Router();
+const teacherQuizRouter = express.Router();
 
-router.post('/create-quiz', protectRoute, createQuiz);
+teacherQuizRouter.post('/', protectRoute, createQuiz);
 
-module.exports = router;
+
+const studentQuizRouter=express.Router();
+studentQuizRouter.post('/take-quiz', takeQuiz);
+studentQuizRouter.get('/quizzes/:studentId', getStudentQuizzes);
+
+module.exports = {teacherQuizRouter ,studentQuizRouter};

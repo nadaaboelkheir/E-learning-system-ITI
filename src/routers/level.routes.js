@@ -4,14 +4,18 @@ const {
 	getAllLevels,
 	deleteLevel,
 	getStudentsInLevel,
-	getMainLevelById
+	getMainLevelById,
+	createLevelWithSubLevels,
 } = require('../controllers/level.controller');
+const { protectRoute } = require('../middlewares/auth.mw');
 
-const router = express.Router();
+const userLevelRouter = express.Router();
 
-router.get('/', getAllLevels);
-router.delete('/:id', deleteLevel);
-router.get('/students/:levelId', getStudentsInLevel);
-router.get('/:id', getMainLevelById);
+userLevelRouter.get('/', getAllLevels);
+const adminLevelRouter = express.Router();
+adminLevelRouter.post('/',  protectRoute,createLevelWithSubLevels);
+adminLevelRouter.delete('/:id',protectRoute, deleteLevel);
+adminLevelRouter.get('/students/:levelId',protectRoute, getStudentsInLevel);
+adminLevelRouter.get('/:id',protectRoute, getMainLevelById);
 
-module.exports = router;
+module.exports = {userLevelRouter, adminLevelRouter};

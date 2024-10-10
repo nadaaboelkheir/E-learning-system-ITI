@@ -1,4 +1,3 @@
-// require important modules
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
@@ -7,19 +6,13 @@ const { PORT } = require('./utils/env');
 const cors = require('cors');
 const db = require('./models');
 const session = require('express-session');
-
-// create express app
+const routes = require('./routers/index');
 const app = express();
 
-// configure rate limiter
 const limiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 100, // limit each IP to 100 requests per windowMs
+	windowMs: 15 * 60 * 1000,
+	max: 100,
 });
-
-// Middleware to parse incoming requests
-// configure app to use bodyParser (to receive post data from clients)
-// this will let us get the data from a POST request
 app.use(bodyParser.urlencoded({ extended: true, limit: '100mb' }));
 app.use(bodyParser.json({ limit: '100mb' }));
 app.use(cookieParser());
@@ -28,7 +21,6 @@ app.use(
 	cors({
 		origin: 'http://localhost:5174',
 		credentials: true,
-
 	}),
 );
 app.use(
@@ -36,29 +28,56 @@ app.use(
 		secret: 'keyboard cat',
 		resave: false,
 		saveUninitialized: true,
-		cookie: { maxAge: 300000 }, // 5 minutes
+		cookie: { maxAge: 300000 },
 	}),
 );
+routes(app);
 
-const authRoutes = require('./routers/auth.routes');
-const adminRoutes = require('./routers/admin.routes');
-const userRoutes = require('./routers/user.routes');
-const courseRoutes = require('./routers/course.routes');
-const levelRoutes = require('./routers/level.routes');
-const quizRoutes = require('./routers/quiz.routes');
-const paymentRoutes = require('./routers/payment.routes');
+app.use((req, res, next) => {
+	res.status(404).json({ message: 'Page not found.' });
+});
 
-// use routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/course', courseRoutes);
-app.use('/api/level', levelRoutes);
-app.use('/api/quiz', quizRoutes);
+// Global Error Handler
+app.use((err, req, res, next) => {
+	err.status = err.status || 500;
 
-app.use('/api/payment', paymentRoutes);
+	res.status(err.status).json({
+		status: err.status,
+		errors: { error: err.toString() },
+	});
+});
+// Global Error Handler
+app.use((err, req, res, next) => {
+	const statusCode = err.status || 500;
+	// const environment = process.env.NODE_ENV || 'development';
 
-// Sync Sequelize models and start the server
+	let customMessage = err.message || 'An unexpected error occurred.';
+	// if (err instanceof ValidationError) {
+	// 	customMessage = 'Invalid data provided';
+	// }
+
+	// const errorDetails =
+	// 	environment === 'development'
+	// 		? {
+	// 				stack: err.stack,
+	// 				errors: err.errors || null,
+	// 			}
+	// 		: {};
+
+	// if (environment === 'development') {
+	// 	console.error(err.stack);
+	// } else {
+	// 	console.error(`Error: ${customMessage}`);
+	// }
+
+	res.status(statusCode).json({
+		status: statusCode,
+		message: customMessage,
+		// ...(environment === 'development' ? errorDetails : {}),
+		// path: req.originalUrl,
+	});
+});
+
 db.sequelize
 	.sync({ force: false })
 	.then(() => {
