@@ -4,7 +4,6 @@ const {
 	getAllLevels,
 	deleteLevel,
 	getStudentsInLevel,
-	getTeacherLevels,
 	getCoursesInLevel,
 	getMainLevelById,
 	createLevelWithSubLevels,
@@ -19,7 +18,7 @@ adminLevelRouter.post('/', protectRoute, createLevelWithSubLevels);
 adminLevelRouter.delete('/:id', protectRoute, deleteLevel);
 adminLevelRouter.get('/students/:levelId', protectRoute, getStudentsInLevel);
 router.get('/teacher/:teacherId', getTeacherLevels);
-router.get('user/levels/courses/:levelId', getCoursesInLevel);
+router.get('/courses/:levelId', getCoursesInLevel);
 adminLevelRouter.get('/:id', protectRoute, getMainLevelById);
 
 module.exports = { userLevelRouter, adminLevelRouter, router };

@@ -74,31 +74,31 @@ exports.deleteLevel = async (req, res) => {
 	}
 };
 exports.getMainLevelById = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const level = await Level.findOne({
-            where: {
-                id,
-                parentLevelId: null,
-            },
-            attributes: ['id', 'title'], 
-            include: [
-                {
-                    model: Level,
-                    as: 'subLevels', 
-                    attributes: ['id', 'title'], 
-                },
-            ],
-        });
+	const { id } = req.params;
+	try {
+		const level = await Level.findOne({
+			where: {
+				id,
+				parentLevelId: null,
+			},
+			attributes: ['id', 'title'],
+			include: [
+				{
+					model: Level,
+					as: 'subLevels',
+					attributes: ['id', 'title'],
+				},
+			],
+		});
 
-        if (!level) {
-            return res.status(404).json({ error: 'المستوى غير موجود' });
-        }
+		if (!level) {
+			return res.status(404).json({ error: 'المستوى غير موجود' });
+		}
 
-        res.status(200).json({ data: level });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+		res.status(200).json({ data: level });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
 };
 exports.getMainLevelById = async (req, res) => {
 	const { id } = req.params;
@@ -153,44 +153,6 @@ exports.getStudentsInLevel = async (req, res) => {
 		});
 	} catch (error) {
 		res.status(500).json({ error: error.message });
-	}
-};
-
-exports.getTeacherLevels = async (req, res) => {
-	const { teacherId } = req.params;
-
-	try {
-		// Check if the teacher exists
-		const teacher = await Teacher.findOne({ where: { id: teacherId } });
-		if (!teacher) {
-			return res.status(404).json({ error: 'المدرس غير موجود' });
-		}
-
-		// Find all distinct levels the teacher is teaching, using the courses they are associated with
-		const levels = await Level.findAll({
-			include: [
-				{
-					model: Course,
-					as: 'courses',
-					where: { teacherId }, // Match courses by teacher ID
-					attributes: [], // We only care about levels, so no need to return course details
-				},
-			],
-			attributes: ['id', 'title'], // You can select specific attributes to return
-			distinct: true, // Ensure unique levels
-		});
-
-		// If no levels are found, return a message
-		if (!levels || levels.length === 0) {
-			return res
-				.status(404)
-				.json({ error: 'لا توجد مستويات مرتبطة بهذا المدرس' });
-		}
-
-		// Return the levels
-		return res.status(200).json({ count: levels.length, data: levels });
-	} catch (error) {
-		return res.status(500).json({ error: error.message });
 	}
 };
 

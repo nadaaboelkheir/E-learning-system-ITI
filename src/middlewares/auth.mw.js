@@ -11,17 +11,21 @@ exports.protectRoute = async (req, res, next) => {
 		return res.status(401).json({ error: 'لا تستطيع الوصول لهذه الصفحة' });
 	}
 	try {
-		const decoded = jwt.verify(token, JWT_SECRET, (err, decoded) => {
-			if (err) {
-				if (err.message === 'jwt expired') {
-					return res
-						.status(401)
-						.json({ error: 'تم انتهاء الصلاحية' });
+		const decoded = jwt.verify(
+			token,
+			process.env.JWT_SECRET,
+			(err, decoded) => {
+				if (err) {
+					if (err.message === 'jwt expired') {
+						return res
+							.status(401)
+							.json({ error: 'تم انتهاء الصلاحية' });
+					}
+					return res.status(401).json({ error: err.message });
 				}
-				return res.status(401).json({ error: err.message });
-			}
-			return decoded;
-		});
+				return decoded;
+			},
+		);
 
 		req.userId = decoded.id;
 		req.role = decoded.role;
