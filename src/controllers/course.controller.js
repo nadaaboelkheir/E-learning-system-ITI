@@ -27,6 +27,12 @@ exports.createFullCourse = async (req, res) => {
 	if (!req.teacher.isEmailVerified) {
 		return res.status(401).json({ error: 'البريد الالكتروني غير مفعل' });
 	}
+	const level = await Level.findOne({
+		where: { id: levelId },
+	});
+	if (!level) {
+		return res.status(404).json({ error: 'المستوى غير موجود' });
+	}
 
 	const transaction = await sequelize.transaction();
 
@@ -400,7 +406,7 @@ exports.getCourseDetails = async (req, res) => {
 					include: [
 						{
 							model: Lesson,
-							attributes: ['pdfUrl', 'videoUrl'],
+							attributes: ['pdfUrl', 'videoUrl','title','description'],
 						},
 					],
 				},
