@@ -10,13 +10,15 @@ const { studentCoursesRouter } = require('./course.routes');
 const { studentQuizRouter } = require('./quiz.routes');
 const reviewRoutes = require('./review.routes');
 const router = express.Router();
-router.get('/:nationalId ', getStudentByNationalId);
-router.get('/evaluation/:studentId', calculateStudentEvaluation);
-router.get('/students-for-parent/:parentPhoneNumber', getStudentsForParent);
 router.use('/auth', studentAuthRouter);
 router.use('/wallet', walletRoutes);
 router.use('/quiz', studentQuizRouter);
 router.use('/course', studentCoursesRouter);
 router.use('/review', reviewRoutes);
+router.get('/evaluation/:studentId', calculateStudentEvaluation);
+
+router.get('/nationalId/:nationalId', getStudentByNationalId);
+router.get('/students-for-parent/:parentPhoneNumber', getStudentsForParent);
+
 
 module.exports = router;

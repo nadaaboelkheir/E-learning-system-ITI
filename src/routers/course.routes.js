@@ -31,7 +31,8 @@ const userCourseRouter = express.Router();
 userCourseRouter.get('/teacher-courses/:teacherId', getTeacherCourses);
 userCourseRouter.get('/details/:id', getCourseDetails);
 userCourseRouter.get('/all-courses', getAllCourses);
-router.get('/students-in-course/:courseId', getStudentsInCourse);
+const adminCourseRouter = express.Router();
+adminCourseRouter.get('/students-in-course/:courseId', getStudentsInCourse);
 
 
 // student
@@ -44,4 +45,5 @@ module.exports = {
 	studentCoursesRouter,
 	userCourseRouter,
 	teacherCourseRouter,
+	adminCourseRouter
 };

@@ -14,7 +14,11 @@ const { userCourseRouter } = require('./course.routes');
 const { userEventRouter } = require('./event.routes');
 const { userLevelRouter } = require('./level.routes');
 const router = express.Router();
-
+// User routes
+router.use('/auth', userAuthRouter);
+router.use('/courses', userCourseRouter);
+router.use('/events', userEventRouter);
+router.use('/levels', userLevelRouter);
 router.get('/current', protectRoute, getCurrentUser);
 router.get('/:id', getUserById);
 router.get('/', getAllUsers);
@@ -22,9 +26,5 @@ router.patch('/profile', protectRoute, updateUserProfile);
 router.post('/reset-password', protectRoute, resetPassword);
 router.post('/forget-password', forgetPassword);
 
-// User routes
-router.use('/auth', userAuthRouter);
-router.use('/courses', userCourseRouter);
-router.use('/events', userEventRouter);
-router.use('/levels', userLevelRouter);
+
 module.exports = router;

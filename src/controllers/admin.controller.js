@@ -97,43 +97,6 @@ exports.adminVerifyCourse = async (req, res) => {
 	}
 };
 
-exports.adminVerifyTeacher = async (req, res) => {
-	const { teacherId } = req.params;
-	try {
-		if (req.role !== 'admin') {
-			return res
-				.status(401)
-				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
-		}
-		const teacher = await Teacher.findByPk(teacherId);
-		if (!teacher) {
-			return res.status(404).json({ error: 'المدرس غير موجود' });
-		}
-		await teacher.update({ isEmailVerified: true });
-		res.status(200).json({ message: 'تم تفعيل المدرس بنجاح' });
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
-};
-
-exports.adminVerifyCourse = async (req, res) => {
-	const { courseId } = req.params;
-	try {
-		if (req.role !== 'admin') {
-			return res
-				.status(401)
-				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
-		}
-		const course = await Course.findByPk(courseId);
-		if (!course) {
-			return res.status(404).json({ error: 'الدورة غير موجودة' });
-		}
-		await course.update({ courseVerify: true });
-		res.status(200).json({ message: 'تم تفعيل الدورة بنجاح' });
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
-};
 
 exports.getAllTeachers = async (req, res) => {
 	try {

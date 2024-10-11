@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { Teacher } = require('../models');
+const { JWT_SECRET } = require('../utils/env');
 exports.protectRoute = async (req, res, next) => {
 	const token =
 		req.cookies['access-token'] ||
@@ -10,7 +11,7 @@ exports.protectRoute = async (req, res, next) => {
 		return res.status(401).json({ error: 'لا تستطيع الوصول لهذه الصفحة' });
 	}
 	try {
-		const decoded = jwt.verify(token, process.env.JWT_SECRET , (err, decoded) => {
+		const decoded = jwt.verify(token, JWT_SECRET , (err, decoded) => {
 			if (err) {
 				if (err.message === 'jwt expired') {
 					return res.status(401).json({ error: 'تم انتهاء الصلاحية' });
