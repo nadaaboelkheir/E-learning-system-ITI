@@ -17,8 +17,7 @@ const adminLevelRouter = express.Router();
 adminLevelRouter.post('/', protectRoute, createLevelWithSubLevels);
 adminLevelRouter.delete('/:id', protectRoute, deleteLevel);
 adminLevelRouter.get('/students/:levelId', protectRoute, getStudentsInLevel);
-router.get('/teacher/:teacherId', getTeacherLevels);
-router.get('/courses/:levelId', getCoursesInLevel);
+userLevelRouter.get('/courses/:levelId', getCoursesInLevel);
 adminLevelRouter.get('/:id', protectRoute, getMainLevelById);
 
 module.exports = { userLevelRouter, adminLevelRouter, router };
