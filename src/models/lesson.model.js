@@ -15,6 +15,14 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: false,
 			},
+			pdfUrl: {
+				type: DataTypes.STRING,
+				allowNull: false,
+			},
+			videoUrl: {
+				type: DataTypes.STRING,
+				allowNull: false,
+			},
 			sectionId: {
 				type: DataTypes.UUID,
 				allowNull: true,
@@ -31,17 +39,6 @@ module.exports = (sequelize, DataTypes) => {
 	Lesson.associate = function (models) {
 		Lesson.belongsTo(models.Course, {
 			foreignKey: 'courseId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-		});
-		Lesson.hasMany(models.Pdf, {
-			foreignKey: 'lessonId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-		});
-
-		Lesson.hasMany(models.Video, {
-			foreignKey: 'lessonId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});

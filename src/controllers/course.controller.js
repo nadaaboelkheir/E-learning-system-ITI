@@ -1,3 +1,4 @@
+const AsyncHandler = require('express-async-handler');
 const {
 	Course,
 	Section,
@@ -10,11 +11,12 @@ const {
 	Student,
 	Wallet,
 	Enrollment,
-   Transaction
+	Transaction,
 } = require('../models');
-const AsyncHandler = require('express-async-handler');
+
 exports.createFullCourse = async (req, res) => {
-	const { title, description, levelId, price, sections } = req.body;
+	const { title, description, levelId, price, discountedPrice, sections } =
+		req.body;
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
@@ -34,16 +36,20 @@ exports.createFullCourse = async (req, res) => {
 			return res.status(400).json({ error: 'الدورة موجودة بالفعل' });
 		}
 
-		const course = await Course.create(
-			{
-				title,
-				description,
-				levelId,
-				price,
-				teacherId,
-			},
-			{ transaction },
-		);
+		const courseData = {
+			title,
+			description,
+			levelId,
+			price,
+			discountedPrice,
+			teacherId,
+		};
+
+		if (discountedPrice !== undefined) {
+			courseData.discountedPrice = discountedPrice;
+		}
+
+		const course = await Course.create(courseData, { transaction });
 
 		// Check if course creation was successful
 		if (!course.id) {
@@ -65,37 +71,12 @@ exports.createFullCourse = async (req, res) => {
 					{
 						title: lessonData.title,
 						description: lessonData.description,
+						pdfUrl: lessonData.pdfUrl,
+						videoUrl: lessonData.videoUrl,
 						sectionId: section.id,
 					},
 					{ transaction },
 				);
-
-				if (lessonData.pdfs) {
-					for (const pdfData of lessonData.pdfs) {
-						await Pdf.create(
-							{
-								title: pdfData.title,
-								description: pdfData.description,
-								url: pdfData.url,
-								lessonId: lesson.id,
-							},
-							{ transaction },
-						);
-					}
-				}
-
-				if (lessonData.videos) {
-					for (const videoData of lessonData.videos) {
-						await Video.create(
-							{
-								title: videoData.title,
-								url: videoData.url,
-								lessonId: lesson.id,
-							},
-							{ transaction },
-						);
-					}
-				}
 			}
 		}
 
@@ -112,7 +93,8 @@ exports.createFullCourse = async (req, res) => {
 
 exports.updateCourse = async (req, res) => {
 	const courseId = req.params.courseId;
-	const { title, description, levelId, price, section } = req.body;
+	const { title, description, levelId, price, discountedPrice, section } =
+		req.body;
 
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
@@ -144,6 +126,9 @@ exports.updateCourse = async (req, res) => {
 		}
 		if (price !== undefined) {
 			course.price = price;
+		}
+		if (discountedPrice !== undefined) {
+			course.discountedPrice = discountedPrice;
 		}
 
 		await course.save({ transaction });
@@ -321,18 +306,33 @@ exports.handleMedia = async (mediaList, mediaType, lessonId, transaction) => {
 
 exports.deleteCourse = async (req, res) => {
 	const { id } = req.params;
-	if (req.role !== 'teacher') {
+
+	// Check if the user is a teacher or an admin
+	if (req.role !== 'teacher' && req.role !== 'admin') {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
-	const teacherId = req.teacher.id;
+
 	try {
-		const course = await Course.findOne({
-			where: { id, teacherId },
-		});
+		// If the user is a teacher, ensure they are the creator of the course
+		let course;
+		if (req.role === 'teacher') {
+			const teacherId = req.teacher.id;
+			course = await Course.findOne({
+				where: { id, teacherId },
+			});
+		} else {
+			// If the user is an admin, they can delete any course
+			course = await Course.findOne({
+				where: { id },
+			});
+		}
+
+		// Check if the course exists
 		if (!course) {
 			return res.status(404).json({ error: 'الدورة غير موجودة' });
 		}
 
+		// Delete the course
 		await course.destroy();
 		return res.status(200).json({ message: 'تم حذف الدورة بنجاح' });
 	} catch (error) {
@@ -479,6 +479,7 @@ exports.getAllCourses = async (req, res) => {
 			title: course.title,
 			description: course.description,
 			price: course.price,
+			discountedPrice: course?.discountedPrice,
 			image: course.image,
 			teacherId: course.teacher.id,
 			teacherName: course.teacher
@@ -519,9 +520,9 @@ exports.getStudentsInCourse = async (req, res) => {
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
-}; 
+};
 
-// student 
+// student
 exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, adminId } = req.body;
 

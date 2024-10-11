@@ -11,12 +11,13 @@ const {
 	getPendingTeachersAndCourses,
 	adminVerifyCourse,
 	deletePendingCourse,
+	adminDeletePendingTeacher,
 } = require('../controllers/admin.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 const { adminLevelRouter } = require('./level.routes');
 const { adminEventRouter } = require('./event.routes');
 const { adminQuizRouter } = require('./quiz.routes');
-const {adminCourseRouter}= require('./course.routes');
+const { adminCourseRouter } = require('./course.routes');
 const router = express.Router();
 router.use('/level', protectRoute, adminLevelRouter);
 router.use('/event', protectRoute, adminEventRouter);
@@ -37,5 +38,7 @@ router.get(
 );
 router.patch('/verify-course/:courseId', protectRoute, adminVerifyCourse);
 router.delete('/pending-course/:courseId', protectRoute, deletePendingCourse);
+
+router.use('/quiz', protectRoute, adminQuizRouter);
 
 module.exports = router;

@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
 				allowNull: false,
 			},
 			mark: {
-				type: DataTypes.FLOAT,
+				type: DataTypes.INTEGER,
 				allowNull: false,
 			},
 			quizId: {
