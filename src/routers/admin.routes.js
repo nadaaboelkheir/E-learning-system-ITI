@@ -39,6 +39,12 @@ router.get(
 router.patch('/verify-course/:courseId', protectRoute, adminVerifyCourse);
 router.delete('/pending-course/:courseId', protectRoute, deletePendingCourse);
 
+router.delete(
+	'/pending-teacher/:teacherId',
+	protectRoute,
+	adminDeletePendingTeacher,
+);
+
 router.use('/quiz', protectRoute, adminQuizRouter);
 
 module.exports = router;
