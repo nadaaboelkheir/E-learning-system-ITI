@@ -1,4 +1,4 @@
-const { Level, Student } = require('../models');
+const { Level, Student,Course  } = require('../models');
 exports.createLevelWithSubLevels = async (req, res) => {
 	const { title, subLevels } = req.body;
 	try {
