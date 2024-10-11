@@ -400,14 +400,7 @@ exports.getCourseDetails = async (req, res) => {
 					include: [
 						{
 							model: Lesson,
-							include: [
-								{
-									model: Pdf,
-								},
-								{
-									model: Video,
-								},
-							],
+							attributes: ['pdfUrl', 'videoUrl'],
 						},
 					],
 				},

@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
 			nationalID: {
 				type: DataTypes.STRING,
 				allowNull: false,
-				unique: true,
+				// unique: true,
 			},
 			phoneNumber: {
 				type: DataTypes.STRING,
@@ -87,16 +87,19 @@ module.exports = (sequelize, DataTypes) => {
 			through: models.Enrollment,
 			foreignKey: 'studentId',
 			as: 'courses',
+			constraints: false,
 		});
 		Student.hasMany(models.Transaction, {
 			foreignKey: 'studentId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			constraints: false,
 		});
 		Student.hasMany(models.Review, {
 			foreignKey: 'studentId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			constraints: false,
 		});
 		Student.hasMany(models.Subscription, {
 			foreignKey: 'studentId',
