@@ -31,11 +31,11 @@ exports.adminSignup = async (req, res) => {
 
 		await admin.update({ walletId: wallet.id });
 
-		res.status(201).json({
+		return	res.status(201).json({
 			message: 'تم التسجيل بنجاح',
 		});
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+		return	res.status(500).json({ error: error.message });
 	}
 };
 
@@ -54,9 +54,9 @@ exports.deleteUser = async (req, res) => {
 			return res.status(404).json({ error: 'المستخدم غير موجود' });
 		}
 		await user.destroy();
-		res.status(200).json({ message: 'تم حذف المستخدم بنجاح' });
+	return	res.status(200).json({ message: 'تم حذف المستخدم بنجاح' });
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+		return	res.status(500).json({ error: error.message });
 	}
 };
 
@@ -77,9 +77,9 @@ exports.adminVerifyTeacher = async (req, res) => {
 		const text =
 			'مبروك! تم تفعيل حسابك من قبل الإدارة. يمكنك الآن تسجيل الدخول.';
 		await sendVerificationEmail(teacher.email, subject, text);
-		res.status(200).json({ message: 'تم تفعيل المدرس بنجاح' });
+	return	res.status(200).json({ message: 'تم تفعيل المدرس بنجاح' });
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+	return	res.status(500).json({ error: error.message });
 	}
 };
 
@@ -101,9 +101,9 @@ exports.adminDeletePendingTeacher = async (req, res) => {
 			'تم حذف حسابك',
 			'تم حذف حسابك من قبل الإدارة',
 		);
-		res.status(200).json({ message: 'تم حذف المدرس بنجاح' });
+	return	res.status(200).json({ message: 'تم حذف المدرس بنجاح' });
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+	return	res.status(500).json({ error: error.message });
 	}
 };
 
@@ -134,9 +134,9 @@ exports.adminVerifyCourse = async (req, res) => {
 		const text = `مبروك! تم تفعيل دورتك "${course.title}" من قبل الإدارة. يمكنك الآن الوصول إليها.`;
 		await sendVerificationEmail(teacherEmail, subject, text);
 
-		res.status(200).json({ message: 'تم تفعيل الدورة بنجاح' });
+	return	res.status(200).json({ message: 'تم تفعيل الدورة بنجاح' });
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+	return	res.status(500).json({ error: error.message });
 	}
 };
 
@@ -162,9 +162,9 @@ exports.getAllTeachers = async (req, res) => {
 		if (!teachers || teachers.length === 0) {
 			return res.status(404).json({ error: 'لا يوجد مدرسين' });
 		}
-		res.status(200).json({ count: teachers.length, data: teachers });
+	return	res.status(200).json({ count: teachers.length, data: teachers });
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+	return	res.status(500).json({ error: error.message });
 	}
 };
 
@@ -190,9 +190,9 @@ exports.getAllStudents = async (req, res) => {
 		if (!students || students.length === 0) {
 			return res.status(404).json({ error: 'لا يوجد طلاب' });
 		}
-		res.status(200).json({ count: students.length, data: students });
+	return	res.status(200).json({ count: students.length, data: students });
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+	return	res.status(500).json({ error: error.message });
 	}
 };
 
@@ -205,12 +205,12 @@ exports.getAllSubjects = async (req, res) => {
 		if (!specializations || specializations.length === 0) {
 			return res.status(404).json({ error: 'لا يوجد مواد دراسية' });
 		}
-		res.status(200).json({
+	return	res.status(200).json({
 			count: specializations.length,
 			data: specializations,
 		});
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+	return	res.status(500).json({ error: error.message });
 	}
 };
 exports.getPendingTeachersAndCourses = async (req, res) => {
@@ -259,9 +259,9 @@ exports.getPendingTeachersAndCourses = async (req, res) => {
 		}
 
 		// Always return the response, including pending teachers
-		res.status(200).json(response);
+		return res.status(200).json(response);
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+		return res.status(500).json({ error: error.message });
 	}
 };
 
@@ -298,9 +298,9 @@ exports.deletePendingCourse = async (req, res) => {
 		// Delete the course
 		await course.destroy();
 
-		res.status(200).json({ message: 'تم حذف الدورة المعلقة بنجاح' });
+	return	res.status(200).json({ message: 'تم حذف الدورة المعلقة بنجاح' });
 	} catch (error) {
-		res.status(500).json({ error: error.message });
+	return	res.status(500).json({ error: error.message });
 	}
 };
 exports.getTeacherCourses = async (req, res) => {
