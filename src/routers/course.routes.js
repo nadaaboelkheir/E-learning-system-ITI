@@ -14,7 +14,7 @@ const {
 const { protectRoute } = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
 const validate = require('../middlewares/validators.mw');
-const router= express.Router();
+const router = express.Router();
 const teacherCourseRouter = express.Router();
 
 teacherCourseRouter.post(
@@ -25,14 +25,13 @@ teacherCourseRouter.post(
 	createFullCourse,
 );
 teacherCourseRouter.patch('/:courseId', protectRoute, updateCourse);
-teacherCourseRouter.delete('/:courseId', protectRoute, deleteCourse);
+teacherCourseRouter.delete('/:id', protectRoute, deleteCourse);
 
 const userCourseRouter = express.Router();
 userCourseRouter.get('/teacher-courses/:teacherId', getTeacherCourses);
 userCourseRouter.get('/details/:id', getCourseDetails);
 userCourseRouter.get('/all-courses', getAllCourses);
 router.get('/students-in-course/:courseId', getStudentsInCourse);
-
 
 // student
 const studentCoursesRouter = express.Router();

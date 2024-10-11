@@ -17,25 +17,32 @@ const {
 exports.createFullCourse = async (req, res) => {
 	const { title, description, levelId, price, discountedPrice, sections } =
 		req.body;
+
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
+
 	const teacherId = req.teacher.id;
+
 	if (!req.teacher.isEmailVerified) {
 		return res.status(401).json({ error: 'البريد الالكتروني غير مفعل' });
 	}
+
 	const transaction = await sequelize.transaction();
 
 	try {
+		// Check if course already exists
 		const existingCourse = await Course.findOne({
 			where: { title },
 			transaction,
 		});
+
 		if (existingCourse) {
 			await transaction.rollback();
-			return res.status(400).json({ error: 'الدورة موجودة بالفعل' });
+			return res.status(409).json({ error: 'الدورة موجودة بالفعل' });
 		}
 
+		// Prepare course data
 		const courseData = {
 			title,
 			description,
@@ -45,10 +52,6 @@ exports.createFullCourse = async (req, res) => {
 			teacherId,
 		};
 
-		if (discountedPrice !== undefined) {
-			courseData.discountedPrice = discountedPrice;
-		}
-
 		const course = await Course.create(courseData, { transaction });
 
 		// Check if course creation was successful
@@ -57,17 +60,15 @@ exports.createFullCourse = async (req, res) => {
 			return res.status(500).json({ error: 'خطأ في إنشاء الدورة' });
 		}
 
+		// Create sections and lessons
 		for (const sectionData of sections) {
 			const section = await Section.create(
-				{
-					title: sectionData.title,
-					courseId: course.id, // Set the courseId from the created course
-				},
+				{ title: sectionData.title, courseId: course.id },
 				{ transaction },
 			);
 
 			for (const lessonData of sectionData.lessons) {
-				const lesson = await Lesson.create(
+				await Lesson.create(
 					{
 						title: lessonData.title,
 						description: lessonData.description,
@@ -80,14 +81,20 @@ exports.createFullCourse = async (req, res) => {
 			}
 		}
 
+		// Commit transaction
 		await transaction.commit();
 
-		res.status(201).json({
-			message: 'تم انشاء الدورة بنجاح',
-		});
+		// Respond with success
+		return res.status(201).json({ message: 'تم انشاء الدورة بنجاح' });
 	} catch (error) {
+		// Rollback in case of error
 		await transaction.rollback();
-		res.status(500).json({ error: error.message });
+
+		// Log error and return 500
+		console.error('Error creating course:', error); // Optional: Add logging
+		res.status(500).json({
+			error: 'An error occurred while creating the course.',
+		});
 	}
 };
 

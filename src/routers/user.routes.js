@@ -26,5 +26,5 @@ router.post('/forget-password', forgetPassword);
 router.use('/auth', userAuthRouter);
 router.use('/courses', userCourseRouter);
 router.use('/events', userEventRouter);
-router.use('/levels', userLevelRouter);
+router.use('/levels/all', userLevelRouter);
 module.exports = router;

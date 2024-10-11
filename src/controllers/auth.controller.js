@@ -262,7 +262,9 @@ exports.userLogin = async (req, res) => {
 		const accessToken = jwt.sign({ id: user.id, role }, JWT_SECRET, {
 			expiresIn: '1h',
 		});
-		return res.status(200).json({ message: 'تم تسجيل الدخول بنجاح', role });
+		return res
+			.status(200)
+			.json({ message: 'تم تسجيل الدخول بنجاح', role, accessToken });
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
