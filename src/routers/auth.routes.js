@@ -6,6 +6,7 @@ const {
 	logout,
 	verifyOtp,
 	resendOtp,
+	getActiveSessions,
 } = require('../controllers/auth.controller');
 const studentValidationRules = require('../validations/student.vc');
 const validate = require('../middlewares/validators.mw');
@@ -24,6 +25,7 @@ studentAuthRouter.post('/resend-otp', resendOtp);
 const userAuthRouter = express.Router();
 
 userAuthRouter.post('/login-user', userLogin);
+userAuthRouter.post('/active-sessions', getActiveSessions);
 userAuthRouter.post('/logout', logout);
 
 const teacherAuthRouter = express.Router();

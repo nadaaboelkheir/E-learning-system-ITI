@@ -1,10 +1,11 @@
-const { Student, Teacher, Admin, Wallet,Level } = require('../models');
+const { Student, Teacher, Admin, Wallet,Level, UserSessions } = require('../models');
 const { JWT_SECRET } = require('../utils/env');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { sendVerificationEmail, generateOtp } = require('../utils/mailer');
 const { generateTokenAndSetCookie } = require('../utils/generateToken');
 const { Op } = require('sequelize');
+const { activeDeviceLimit } = require('../utils/helperFunctions');
 
 exports.registerStudent = async (req, res) => {
 	const {
@@ -266,13 +267,46 @@ exports.userLogin = async (req, res) => {
 		}
 
 		const role = user.role;
-		await generateTokenAndSetCookie(user.id, role, res);
+		const deviceInfo = req.headers['user-agent'];
+		const userId = user.id;
+
 		const accessToken = jwt.sign({ id: user.id, role }, JWT_SECRET, {
 			expiresIn: '1h',
 		});
-		return res
-			.status(200)
-			.json({ message: 'تم تسجيل الدخول بنجاح', role, accessToken });
+		await generateTokenAndSetCookie(user.id, role, res);
+
+		// Check existing sessions for the student
+		if (role === 'student') {
+			// Check if the student has already exceeded active device limits
+			const sessions = await UserSessions.findAll({ where: { userId } });
+			const activeSessions = sessions.filter((session) => session.active);
+
+			if (activeSessions.length >= activeDeviceLimit) {
+				return res.status(403).json({
+					message:
+						'You cannot use more than 3 devices at the same time',
+				});
+			}
+
+			// Create or update session for the student
+			const existingSession = await UserSessions.findOne({
+				where: { userId, deviceInfo },
+			});
+
+			if (existingSession) {
+				// Update existing session to active
+				await existingSession.update({ active: true });
+			} else {
+				// Create a new session if not already exists
+				await UserSessions.create({
+					userId,
+					deviceInfo,
+					active: true,
+				});
+			}
+		}
+
+		return res.status(200).json({ message: 'تم تسجيل الدخول بنجاح', role });
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
@@ -282,4 +316,30 @@ exports.logout = async (req, res) => {
 	res.clearCookie('access-token');
 	res.clearCookie('refresh-token');
 	res.status(200).json({ message: 'تم تسجيل الخروج بنجاح' });
+};
+
+exports.getActiveSessions = async (req, res) => {
+	try {
+		// Find all active sessions
+		const activeSessions = await UserSessions.findAll({
+			where: { active: true },
+			include: [
+				{
+					model: Student,
+					as: 'student',
+					attributes: ['id', 'firstName', 'lastName', 'email'],
+				},
+			],
+		});
+
+		if (activeSessions.length === 0) {
+			return res
+				.status(404)
+				.json({ message: 'No active sessions found' });
+		}
+
+		return res.status(200).json(activeSessions);
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
 };

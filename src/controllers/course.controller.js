@@ -12,6 +12,7 @@ const {
 	Wallet,
 	Enrollment,
 	Transaction,
+	Admin,
 } = require('../models');
 
 exports.createFullCourse = async (req, res) => {
