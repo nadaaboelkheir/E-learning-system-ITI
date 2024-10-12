@@ -4,13 +4,14 @@ const {
 	storeTransactionDetailsAndUpdateWallet,
 	getStudentTransactions,
 	getStudentWallet,
-} = require('../controllers/payment.controller');
+} = require('../controllers/wallet.controller');
+const { protectRoute } = require('../middlewares/auth.mw');
 
 const router = express.Router();
 
-router.post('/charge', chargeStudentWallet);
+router.post('/charge', protectRoute,chargeStudentWallet);
 
-router.post('/transaction', storeTransactionDetailsAndUpdateWallet);
+router.post('/transaction', protectRoute,storeTransactionDetailsAndUpdateWallet);
 
 router.get('/transactions/:studentId', getStudentTransactions);
 

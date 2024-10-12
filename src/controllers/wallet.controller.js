@@ -8,7 +8,16 @@ const {
 } = require('../services/payment.service');
 const { parseISO } = require('date-fns');
 exports.chargeStudentWallet = AsyncHandler(async (req, res) => {
-	const { amount, studentId } = req.body;
+	const { amount } = req.body;
+	if (req.role !== 'student') {
+		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
+
+	const studentId = req.student.id;
+
+	if (!req.student.isEmailVerified) {
+		return res.status(401).json({ error: 'البريد الالكتروني غير مفعل' });
+	}
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
@@ -51,11 +60,24 @@ exports.chargeStudentWallet = AsyncHandler(async (req, res) => {
 });
 exports.storeTransactionDetailsAndUpdateWallet = AsyncHandler(
 	async (req, res) => {
-		const { success, student_id, currency, amount_cents, updated_at } =
-			req.body;
+		const { success, currency, amount_cents, updated_at } = req.body;
 		const decodedUpdatedAt = decodeURIComponent(updated_at);
 		const transactionDate = parseISO(decodedUpdatedAt);
-		const student = await Student.findOne({ where: { id: student_id } });
+		if (req.role !== 'student') {
+			return res
+				.status(401)
+				.json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
+
+		const studentId = req.student.id;
+
+		if (!req.student.isEmailVerified) {
+			return res
+				.status(401)
+				.json({ error: 'البريد الالكتروني غير مفعل' });
+		}
+
+		const student = await Student.findOne({ where: { id: studentId } });
 		if (!student) {
 			return res.status(404).json({ message: 'Student not found' });
 		}
