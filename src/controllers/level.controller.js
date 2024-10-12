@@ -47,6 +47,13 @@ exports.getAllLevels = async (req, res) => {
 					model: Level,
 					as: 'subLevels',
 					attributes: ['id', 'title'],
+					include: [
+						{
+							model: Course,
+							as: 'courses',
+							attributes: ['id', 'title'],
+						},
+					],
 				},
 			],
 		});
