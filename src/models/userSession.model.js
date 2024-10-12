@@ -24,5 +24,12 @@ module.exports = (sequelize, DataTypes) => {
 		},
 	);
 
+	UserSessions.associate = function (models) {
+		UserSessions.belongsTo(models.Student, {
+			foreignKey: 'userId',
+			as: 'student',
+		});
+	};
+
 	return UserSessions;
 };
