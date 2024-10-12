@@ -37,8 +37,8 @@ module.exports = (sequelize, DataTypes) => {
 		},
 	);
 	Lesson.associate = function (models) {
-		Lesson.belongsTo(models.Course, {
-			foreignKey: 'courseId',
+		Lesson.belongsTo(models.Section, {
+			foreignKey: 'sectionId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});

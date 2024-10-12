@@ -7,6 +7,7 @@ const {
 	Student,
 	Enrollment,
 	Course,
+	Teacher,
 } = require('../models');
 const AsyncHandler = require('express-async-handler');
 
@@ -104,7 +105,6 @@ exports.takeQuiz = AsyncHandler(async (req, res) => {
 
 	for (const question of questions) {
 		const studentAnswer = answers.find((a) => a.questionId === question.id);
-		console.log(question.Answers);
 		const correctAnswer = question.Answers.find((ans) => ans.isCorrect);
 
 		if (studentAnswer && studentAnswer.answerId === correctAnswer.id) {

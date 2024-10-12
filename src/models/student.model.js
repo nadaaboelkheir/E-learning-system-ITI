@@ -127,6 +127,10 @@ module.exports = (sequelize, DataTypes) => {
 			onDelete: 'CASCADE',
 			as: 'level',
 		});
+		Student.hasMany(models.UserSessions, {
+			foreignKey: 'userId',
+			as: 'sessions',
+		});
 	};
 
 	return Student;

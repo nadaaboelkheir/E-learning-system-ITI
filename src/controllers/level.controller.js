@@ -1,4 +1,4 @@
-const { Level, Student,Course  } = require('../models');
+const { Level, Student, Course } = require('../models');
 exports.createLevelWithSubLevels = async (req, res) => {
 	const { title, subLevels } = req.body;
 	try {
@@ -73,33 +73,7 @@ exports.deleteLevel = async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
-exports.getMainLevelById = async (req, res) => {
-	const { id } = req.params;
-	try {
-		const level = await Level.findOne({
-			where: {
-				id,
-				parentLevelId: null,
-			},
-			attributes: ['id', 'title'],
-			include: [
-				{
-					model: Level,
-					as: 'subLevels',
-					attributes: ['id', 'title'],
-				},
-			],
-		});
 
-		if (!level) {
-			return res.status(404).json({ error: 'المستوى غير موجود' });
-		}
-
-		res.status(200).json({ data: level });
-	} catch (error) {
-		res.status(500).json({ error: error.message });
-	}
-};
 exports.getMainLevelById = async (req, res) => {
 	const { id } = req.params;
 	try {
@@ -130,6 +104,7 @@ exports.getMainLevelById = async (req, res) => {
 
 exports.getStudentsInLevel = async (req, res) => {
 	const { levelId } = req.params;
+	console.log('Requested levelId:', levelId);
 	try {
 		const level = await Level.findOne({
 			where: { id: levelId },
@@ -137,6 +112,7 @@ exports.getStudentsInLevel = async (req, res) => {
 				model: Student,
 				as: 'students',
 				attributes: ['id', 'firstName', 'lastName', 'email'],
+				where: { isEmailVerified: true },
 			},
 		});
 		if (!level) {

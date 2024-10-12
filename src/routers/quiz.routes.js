@@ -5,7 +5,7 @@ const {
 	getAllQuizzes,
 	takeQuiz,
 	getStudentQuizzes,
-    getQuizForSection
+	getQuizForSection,
 } = require('../controllers/quiz.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 
