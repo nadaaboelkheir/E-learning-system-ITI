@@ -368,14 +368,7 @@ exports.getTeacherCourses = async (req, res) => {
 					include: [
 						{
 							model: Lesson,
-							include: [
-								{
-									model: Pdf,
-								},
-								{
-									model: Video,
-								},
-							],
+							
 						},
 					],
 				},

@@ -13,6 +13,7 @@ exports.createEvent = async (req, res) => {
 			description,
 			start,
 			end,
+            adminId:req.admin.id
 		});
 		res.status(201).json({
 			message: 'تم انشاء الحدث بنجاح',
