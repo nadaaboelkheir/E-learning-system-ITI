@@ -109,10 +109,24 @@ exports.getAllUsers = async (req, res) => {
 			attributes: ['id', 'name', 'email', 'role'],
 		});
 		const teachers = await Teacher.findAll({
-			attributes: ['id', 'firstName', 'lastName', 'email', 'role'],
+			attributes: [
+				'id',
+				'firstName',
+				'lastName',
+				'email',
+				'role',
+				'isEmailVerified',
+			],
 		});
 		const students = await Student.findAll({
-			attributes: ['id', 'firstName', 'lastName', 'email', 'role'],
+			attributes: [
+				'id',
+				'firstName',
+				'lastName',
+				'email',
+				'role',
+				'isEmailVerified',
+			],
 		});
 
 		const allUsers = [
@@ -128,6 +142,7 @@ exports.getAllUsers = async (req, res) => {
 				lastName: teacher.lastName,
 				email: teacher.email,
 				role: teacher.role,
+				isEmailVerified: teacher.isEmailVerified,
 			})),
 			...students.map((student) => ({
 				id: student.id,
@@ -135,6 +150,7 @@ exports.getAllUsers = async (req, res) => {
 				lastName: student.lastName,
 				email: student.email,
 				role: student.role,
+				isEmailVerified: student.isEmailVerified,
 			})),
 		];
 
@@ -261,8 +277,6 @@ exports.getUserById = async (req, res) => {
 		return res.status(500).json({ message: 'Failed to retrieve user.' });
 	}
 };
-
-
 
 exports.resetPassword = async (req, res) => {
 	const { oldPassword, newPassword } = req.body;
