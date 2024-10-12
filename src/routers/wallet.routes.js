@@ -9,12 +9,16 @@ const { protectRoute } = require('../middlewares/auth.mw');
 
 const router = express.Router();
 
-router.post('/charge', protectRoute,chargeStudentWallet);
+router.post('/charge', protectRoute, chargeStudentWallet);
 
-router.post('/transaction', protectRoute,storeTransactionDetailsAndUpdateWallet);
+router.post(
+	'/transaction',
+	protectRoute,
+	storeTransactionDetailsAndUpdateWallet,
+);
 
-router.get('/transactions/:studentId', getStudentTransactions);
+router.get('/transactions/', protectRoute, getStudentTransactions);
 
-router.get('/:studentId', getStudentWallet);
+router.get('/', protectRoute, getStudentWallet);
 
 module.exports = router;

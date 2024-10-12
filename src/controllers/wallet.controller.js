@@ -119,7 +119,15 @@ exports.storeTransactionDetailsAndUpdateWallet = AsyncHandler(
 	},
 );
 exports.getStudentTransactions = AsyncHandler(async (req, res) => {
-	const { studentId } = req.params;
+	if (req.role !== 'student') {
+		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
+
+	const studentId = req.student.id;
+
+	if (!req.student.isEmailVerified) {
+		return res.status(401).json({ error: 'البريد الالكتروني غير مفعل' });
+	}
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
@@ -140,7 +148,15 @@ exports.getStudentTransactions = AsyncHandler(async (req, res) => {
 	return res.status(200).json({ transactions: transactions });
 });
 exports.getStudentWallet = AsyncHandler(async (req, res) => {
-	const { studentId } = req.params;
+	if (req.role !== 'student') {
+		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
+
+	const studentId = req.student.id;
+
+	if (!req.student.isEmailVerified) {
+		return res.status(401).json({ error: 'البريد الالكتروني غير مفعل' });
+	}
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
