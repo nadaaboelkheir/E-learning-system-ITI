@@ -357,7 +357,9 @@ exports.deleteCourse = async (req, res) => {
 exports.getTeacherCourses = async (req, res) => {
 	const { teacherId } = req.params;
 	try {
-		const teacher = await Teacher.findOne({ where: { id: teacherId } });
+		const teacher = await Teacher.findOne({
+			where: { id: teacherId },
+		});
 		if (!teacher) {
 			return res.status(404).json({ error: 'المدرس غير موجود' });
 		}
@@ -369,7 +371,6 @@ exports.getTeacherCourses = async (req, res) => {
 					include: [
 						{
 							model: Lesson,
-							
 						},
 					],
 				},
@@ -384,6 +385,34 @@ exports.getTeacherCourses = async (req, res) => {
 			return res.status(404).json({ error: 'لا يوجد دورات لهذا المدرس' });
 		}
 		return res.status(200).json({ count: courses.length, data: courses });
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
+	}
+};
+
+exports.getTeacherSections = async (req, res) => {
+	try {
+		const teacherId = req.teacher.id;
+		const courses = await Course.findAll({
+			where: { teacherId },
+			include: [
+				{
+					model: Section,
+					as: 'sections',
+				},
+			],
+		});
+
+		let sections = [];
+		courses.forEach((course) => {
+			sections = sections.concat(course.sections);
+		});
+
+		if (sections.length === 0) {
+			return res.status(404).json({ error: 'لا يوجد وحدات لهذا المدرس' });
+		}
+
+		return res.status(200).json({ count: sections.length, data: sections });
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}

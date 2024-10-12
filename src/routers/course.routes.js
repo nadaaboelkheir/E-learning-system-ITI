@@ -10,6 +10,7 @@ const {
 	getStudentsInCourse,
 	buyCourseWithWallet,
 	getStudentEnrolledCourses,
+	getTeacherSections,
 } = require('../controllers/course.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
@@ -29,6 +30,7 @@ teacherCourseRouter.delete('/:id', protectRoute, deleteCourse);
 
 const userCourseRouter = express.Router();
 userCourseRouter.get('/teacher-courses/:teacherId', getTeacherCourses);
+userCourseRouter.get('/teacher-sections', protectRoute, getTeacherSections);
 userCourseRouter.get('/details/:id', getCourseDetails);
 userCourseRouter.get('/all-courses', getAllCourses);
 const adminCourseRouter = express.Router();
