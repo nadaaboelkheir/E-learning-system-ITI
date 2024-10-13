@@ -1,4 +1,11 @@
-const { Student, Teacher, Admin, Wallet,Level, UserSessions } = require('../models');
+const {
+	Student,
+	Teacher,
+	Admin,
+	Wallet,
+	Level,
+	UserSessions,
+} = require('../models');
 const { JWT_SECRET } = require('../utils/env');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -26,7 +33,7 @@ exports.registerStudent = async (req, res) => {
 		if (!level) {
 			return res.status(404).json({ error: 'المستوى غير موجود' });
 		}
-	
+
 		const existingStudent = await Student.findOne({
 			where: {
 				[Op.or]: [{ email }, { nationalID }],
@@ -36,7 +43,6 @@ exports.registerStudent = async (req, res) => {
 		if (existingStudent) {
 			return res.status(400).json({ error: 'المستخدم موجود بالفعل' });
 		}
-
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 		const otp = generateOtp();

@@ -68,6 +68,7 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: 'courseId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			as: 'sections',
 		});
 		Course.hasMany(models.Review, {
 			foreignKey: 'courseId',
