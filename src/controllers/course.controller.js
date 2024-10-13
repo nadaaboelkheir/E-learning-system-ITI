@@ -370,6 +370,7 @@ exports.getTeacherCourses = async (req, res) => {
 			include: [
 				{
 					model: Section,
+					as: 'sections',
 					include: [
 						{
 							model: Lesson,
@@ -401,6 +402,11 @@ exports.getTeacherSections = async (req, res) => {
 				{
 					model: Section,
 					as: 'sections',
+					include: [
+						{
+							model: Lesson,
+						},
+					],
 				},
 			],
 		});
