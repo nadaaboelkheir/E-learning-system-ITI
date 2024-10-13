@@ -31,6 +31,7 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: 'courseId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			as: 'course',
 		});
 		Section.hasMany(models.Quiz, {
 			foreignKey: 'sectionId',
@@ -41,6 +42,7 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: 'sectionId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
+			as: 'lessons',
 		});
 	};
 

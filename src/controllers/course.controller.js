@@ -428,9 +428,19 @@ exports.getCourseDetails = async (req, res) => {
 			include: [
 				{
 					model: Section,
+					as: 'sections',
+					attributes: ['id', 'title'],
 					include: [
 						{
 							model: Lesson,
+							as: 'lessons',
+							attributes: [
+								'id',
+								'title',
+								'videoUrl',
+								'description',
+								'pdfUrl',
+							],
 						},
 					],
 				},
@@ -452,15 +462,35 @@ exports.getCourseDetails = async (req, res) => {
 		}
 
 		// Calculate the total number of lessons
-		const lessonsCount = course.Sections.reduce((count, section) => {
-			return count + section.Lessons.length;
-		}, 0);
+		const lessonsCount = Array.isArray(course.sections)
+			? course.sections.reduce((count, section) => {
+					return (
+						count +
+						(Array.isArray(section.lessons)
+							? section.lessons.length
+							: 0)
+					);
+				}, 0)
+			: 0;
 
 		// Move teacher data to main response object
 		const { id: teacherId, firstName, lastName } = course.teacher;
 
 		// Move level data to main response object
 		const { levelTitle } = course.level;
+
+		// Prepare sections with lessons included
+		const sectionsWithLessons = course.sections.map((section) => ({
+			id: section.id,
+			title: section.title,
+			lessons: section.lessons.map((lesson) => ({
+				id: lesson.id,
+				title: lesson.title,
+				videoUrl: lesson.videoUrl,
+				description: lesson.description,
+				pdfUrl: lesson.pdfUrl,
+			})),
+		}));
 
 		return res.status(200).json({
 			id: course.id,
@@ -475,7 +505,7 @@ exports.getCourseDetails = async (req, res) => {
 			createdAt: course.createdAt,
 			updatedAt: course.updatedAt,
 			lessonsCount, // Add the number of lessons
-			Sections: course.Sections, // Include sections if needed
+			sections: sectionsWithLessons, // Include sections with lessons
 		});
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
