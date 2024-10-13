@@ -1,4 +1,5 @@
-const { Level, Student, Course } = require('../models');
+const { Level, Student, Course, Teacher } = require('../models');
+const AsyncHandler = require('express-async-handler');
 exports.createLevelWithSubLevels = async (req, res) => {
 	const { title, subLevels } = req.body;
 	try {
@@ -166,3 +167,44 @@ exports.getCoursesInLevel = async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
+exports.getTeacherLevels = AsyncHandler(async (req, res) => {
+	const { teacherId } = req.params;
+
+	const teacher = await Teacher.findOne({ where: { id: teacherId } });
+
+	if (!teacher) {
+		return res.status(404).json({ error: 'Teacher not found' });
+	}
+
+	const teacherCourses = await Course.findAll({
+		where: { teacherId },
+		include: [
+			{
+				model: Level,
+				attributes: ['id', 'title'],
+				as: 'level',
+			},
+		],
+	});
+
+	if (!teacherCourses || teacherCourses.length === 0) {
+		return res
+			.status(404)
+			.json({ error: 'No courses found for this teacher' });
+	}
+
+	const levels = teacherCourses
+		.map((course) => course.level)
+		.filter((level) => level);
+
+	if (levels.length === 0) {
+		return res
+			.status(404)
+			.json({ error: "No levels found for this teacher's courses" });
+	}
+
+	res.status(200).json({
+		count: levels.length,
+		data: levels,
+	});
+});
