@@ -203,6 +203,13 @@ exports.createTeacher = async (req, res) => {
 		if (existingTeacher) {
 			return res.status(400).json({ error: 'المدرس موجود بالفعل' });
 		}
+		const existUser = await Student.findOne({
+			where: { email },
+		});
+
+		if (existUser) {
+			return res.status(400).json({ error: 'المستخدم موجود بالفعل' });
+		}
 
 		if (phoneNumber) {
 			const existingTeacher = await Teacher.findOne({
@@ -312,7 +319,9 @@ exports.userLogin = async (req, res) => {
 			}
 		}
 
-		return res.status(200).json({ message: 'تم تسجيل الدخول بنجاح', role ,accessToken });
+		return res
+			.status(200)
+			.json({ message: 'تم تسجيل الدخول بنجاح', role, accessToken });
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
 	}
