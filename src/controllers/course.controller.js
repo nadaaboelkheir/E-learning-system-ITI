@@ -13,6 +13,8 @@ const {
 	Enrollment,
 	Transaction,
 	Admin,
+	Quiz,
+	QuizAttempt,
 } = require('../models');
 
 exports.createFullCourse = async (req, res) => {
@@ -369,7 +371,6 @@ exports.getTeacherCourses = async (req, res) => {
 					include: [
 						{
 							model: Lesson,
-							
 						},
 					],
 				},
@@ -642,5 +643,59 @@ exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
 		message: 'Student courses retrieved successfully',
 		courses,
 		numberOfCourses: courses.length,
+	});
+});
+exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
+	const { courseId, studentId } = req.params;
+
+	const enrollment = await Enrollment.findOne({
+		where: {
+			studentId: studentId,
+			courseId: courseId,
+		},
+	});
+
+	if (!enrollment) {
+		return res
+			.status(404)
+			.json({ message: 'User not enrolled in this course' });
+	}
+
+	const quizzes = await Quiz.findAll({
+		where: { courseId: courseId },
+	});
+
+	if (quizzes.length === 0) {
+		return res
+			.status(404)
+			.json({ message: 'No quizzes available for this course' });
+	}
+
+	let totalGrade = 0;
+	let allQuizzesCompleted = true;
+
+	for (const quiz of quizzes) {
+		const studentQuiz = await QuizAttempt.findOne({
+			where: { quizId: quiz.id, studentId: studentId },
+		});
+
+		if (!studentQuiz) {
+			allQuizzesCompleted = false;
+			break;
+		}
+
+		totalGrade += studentQuiz.score;
+	}
+
+	if (!allQuizzesCompleted) {
+		return res
+			.status(400)
+			.json({ message: 'Not all quizzes have been taken' });
+	}
+
+	return res.status(200).json({
+		message: 'All quizzes have been taken',
+		totalGrade,
+		averageGrade: totalGrade / quizzes.length,
 	});
 });

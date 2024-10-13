@@ -10,6 +10,7 @@ const {
 	getStudentsInCourse,
 	buyCourseWithWallet,
 	getStudentEnrolledCourses,
+	getCertificateForCourse
 } = require('../controllers/course.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
@@ -38,8 +39,8 @@ adminCourseRouter.get('/students-in-course/:courseId', getStudentsInCourse);
 const studentCoursesRouter = express.Router();
 studentCoursesRouter
 	.post('/buy-course', buyCourseWithWallet)
-	.get('/enrolled-courses/:studentId', getStudentEnrolledCourses);
-
+	.get('/enrolled-courses/:studentId', getStudentEnrolledCourses)
+    .get('/certificate/:studentId/:courseId', getCertificateForCourse)
 module.exports = {
 	studentCoursesRouter,
 	userCourseRouter,
