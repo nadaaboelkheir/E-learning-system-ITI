@@ -199,15 +199,10 @@ exports.createTeacher = async (req, res) => {
 		const existingTeacher = await Teacher.findOne({
 			where: { email },
 		});
-
-		if (existingTeacher) {
-			return res.status(400).json({ error: 'المدرس موجود بالفعل' });
-		}
 		const existUser = await Student.findOne({
 			where: { email },
 		});
-
-		if (existUser) {
+		if (existingTeacher || existUser) {
 			return res.status(400).json({ error: 'المستخدم موجود بالفعل' });
 		}
 
@@ -215,7 +210,10 @@ exports.createTeacher = async (req, res) => {
 			const existingTeacher = await Teacher.findOne({
 				where: { phoneNumber },
 			});
-			if (existingTeacher) {
+			const existUser = await Student.findOne({
+				where: { phoneNumber },
+			});
+			if (existingTeacher || existUser) {
 				return res
 					.status(400)
 					.json({ error: 'رقم الهاتف مستخدم بالفعل' });
