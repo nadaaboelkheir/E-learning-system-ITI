@@ -363,6 +363,7 @@ exports.getTeacherCourses = AsyncHandler(async (req, res) => {
 				include: [
 					{
 						model: Lesson,
+						as: 'lessons',
 					},
 				],
 			},
