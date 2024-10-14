@@ -27,8 +27,8 @@ teacherCourseRouter.post(
 	protectRoute,
 	createFullCourse,
 );
-teacherCourseRouter.patch('/:courseId', protectRoute, updateCourse);
-teacherCourseRouter.delete('/:id', protectRoute, deleteCourse);
+teacherCourseRouter.patch('/:courseId', upload, protectRoute, updateCourse);
+teacherCourseRouter.delete('/:courseId', protectRoute, deleteCourse);
 
 const userCourseRouter = express.Router();
 userCourseRouter.get('/teacher-courses/:teacherId', getTeacherCourses);

@@ -68,22 +68,14 @@ exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json({ students });
 });
-exports.getStudentByNationalId = async (req, res) => {
+exports.getStudentByNationalId = AsyncHandler(async (req, res) => {
 	const { nationalId } = req.params;
-	try {
-		const student = await Student.findOne({ where: { nationalId } });
-		if (student) {
-			const {
-				password,
-				createdAt,
-				updatedAt,
-				refreshToken,
-				...safeStudent
-			} = student.dataValues;
-			return res.status(200).json(safeStudent);
-		}
-		return res.status(404).json({ message: 'هذا الطالب غير موجود' });
-	} catch (error) {
-		return res.status(500).json({ error: error.message });
+
+	const student = await Student.findOne({ where: { nationalId } });
+	if (student) {
+		const { password, createdAt, updatedAt, refreshToken, ...safeStudent } =
+			student.dataValues;
+		return res.status(200).json(safeStudent);
 	}
-};
+	return res.status(404).json({ message: 'هذا الطالب غير موجود' });
+});

@@ -2,7 +2,7 @@ const express = require('express');
 const {
 	registerStudent,
 	userLogin,
-	createTeacher,
+	signUpTeacher,
 	logout,
 	verifyOtp,
 	resendOtp,
@@ -34,7 +34,7 @@ teacherAuthRouter.post(
 	'/signup',
 	teacherValidationRules(),
 	validate,
-	createTeacher,
+	signUpTeacher,
 );
 
 module.exports = { userAuthRouter, studentAuthRouter, teacherAuthRouter };

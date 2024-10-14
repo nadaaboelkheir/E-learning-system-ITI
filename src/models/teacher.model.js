@@ -18,7 +18,6 @@ module.exports = (sequelize, DataTypes) => {
 			email: {
 				type: DataTypes.STRING,
 				allowNull: false,
-				unique: true,
 				validate: {
 					isEmail: true,
 				},
@@ -85,6 +84,7 @@ module.exports = (sequelize, DataTypes) => {
 		{
 			timestamps: true,
 		},
+		{ indexes: [{ fields: ['email'] }] },
 	);
 	Teacher.associate = function (models) {
 		Teacher.hasMany(models.Course, {

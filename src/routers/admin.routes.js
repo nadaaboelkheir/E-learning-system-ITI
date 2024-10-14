@@ -1,7 +1,6 @@
 const express = require('express');
 
 const {
-	adminSignup,
 	deleteUser,
 	getAllTeachers,
 	getAllStudents,
@@ -23,7 +22,6 @@ router.use('/level', protectRoute, adminLevelRouter);
 router.use('/event', protectRoute, adminEventRouter);
 router.use('/quiz', protectRoute, adminQuizRouter);
 router.use('/course', protectRoute, adminCourseRouter);
-router.post('/signup', adminSignup);
 router.delete('/user/:userId', protectRoute, deleteUser);
 router.get('/teachers', getAllTeachers);
 router.get('/students', getAllStudents);
