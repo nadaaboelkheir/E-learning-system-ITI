@@ -16,8 +16,21 @@ const {
 	Quiz,
 	QuizAttempt,
 } = require('../models');
-
-exports.createFullCourse = async (req, res) => {
+const cloudinary = require('../configs/cloudinary.config');
+const deleteImageFromCloudinary = async (imageUrl) => {
+	try {
+		const publicId = imageUrl.split('/').pop().split('.')[0];
+		await cloudinary.uploader.destroy(`images/${publicId}`);
+		console.log(
+			`Image with public ID: ${publicId} deleted successfully from Cloudinary.`,
+		);
+		return true;
+	} catch (error) {
+		console.error('Error deleting image from Cloudinary:', error);
+		throw new Error('Failed to delete image from Cloudinary');
+	}
+};
+exports.createFullCourse = AsyncHandler(async (req, res) => {
 	if (!req.file) {
 		return res.status(400).json({ error: 'الرجاء تحميل صورة الدورة' });
 	}
@@ -98,9 +111,9 @@ exports.createFullCourse = async (req, res) => {
 			.status(500)
 			.json({ error: 'An error occurred while creating the course.' });
 	}
-};
+});
 
-exports.updateCourse = async (req, res) => {
+exports.updateCourse = AsyncHandler(async (req, res) => {
 	const courseId = req.params.courseId;
 	const { title, description, levelId, price, discountedPrice, section } =
 		req.body;
@@ -138,6 +151,12 @@ exports.updateCourse = async (req, res) => {
 		}
 		if (discountedPrice !== undefined) {
 			course.discountedPrice = discountedPrice;
+		}
+		if (req.file) {
+			if (course.image) {
+				await deleteImageFromCloudinary(course.image);
+			}
+			course.image = req.file.path;
 		}
 
 		await course.save({ transaction });
@@ -194,7 +213,7 @@ exports.updateCourse = async (req, res) => {
 		await transaction.rollback();
 		res.status(500).json({ error: 'حدث خطأ أثناء تحديث الدورة' });
 	}
-};
+});
 
 // Function to handle lessons associated with sections
 exports.handleLessons = async (lessons, sectionId, transaction) => {
@@ -314,33 +333,28 @@ exports.handleMedia = async (mediaList, mediaType, lessonId, transaction) => {
 };
 
 exports.deleteCourse = AsyncHandler(async (req, res) => {
-	const { id } = req.params;
+	const { courseId } = req.params;
 
-	// Check if the user is a teacher or an admin
 	if (req.role !== 'teacher' && req.role !== 'admin') {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 
-	// If the user is a teacher, ensure they are the creator of the course
 	let course;
 	if (req.role === 'teacher') {
 		const teacherId = req.teacher.id;
 		course = await Course.findOne({
-			where: { id, teacherId },
+			where: { id: courseId, teacherId },
 		});
 	} else {
-		// If the user is an admin, they can delete any course
 		course = await Course.findOne({
-			where: { id },
+			where: { id: courseId },
 		});
 	}
-
-	// Check if the course exists
 	if (!course) {
 		return res.status(404).json({ error: 'الدورة غير موجودة' });
 	}
-
-	// Delete the course
+	const imageUrl = course.image;
+	await deleteImageFromCloudinary(imageUrl);
 	await course.destroy();
 	return res.status(200).json({ message: 'تم حذف الدورة بنجاح' });
 });
