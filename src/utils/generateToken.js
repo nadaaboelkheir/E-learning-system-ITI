@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { Admin, Student, Teacher } = require('../models');
-const { JWT_SECRET, JWT_REFRESH_SECRET } = require('../utils/env');
+const { JWT_SECRET, JWT_REFRESH_SECRET, NODE_ENV } = require('../utils/env');
 
 exports.generateTokenAndSetCookie = async (userId, role, res) => {
 	const accessToken = jwt.sign({ id: userId, role }, JWT_SECRET, {
@@ -25,14 +25,14 @@ exports.generateTokenAndSetCookie = async (userId, role, res) => {
 
 		res.cookie('access-token', accessToken, {
 			httpOnly: true,
-			secure: process.env.NODE_ENV !== 'development',
+			secure: NODE_ENV !== 'development',
 			sameSite: 'strict',
 			maxAge: 60 * 60 * 1000,
 		});
 
 		res.cookie('refresh-token', refreshToken, {
 			httpOnly: true,
-			secure: process.env.NODE_ENV !== 'development',
+			secure: NODE_ENV !== 'development',
 			sameSite: 'strict',
 			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
@@ -47,10 +47,7 @@ exports.refreshAccessToken = async (req, res) => {
 	}
 
 	try {
-		const decoded = jwt.verify(
-			refreshToken,
-			process.env.JWT_REFRESH_SECRET,
-		);
+		const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
 		const userId = decoded.id;
 		const role = decoded.role;
 
@@ -71,7 +68,7 @@ exports.refreshAccessToken = async (req, res) => {
 		// Generate new access token
 		const newAccessToken = jwt.sign(
 			{ id: decoded.id, role: decoded.role },
-			process.env.JWT_SECRET,
+			JWT_SECRET,
 			{
 				expiresIn: '1h',
 			},
@@ -79,7 +76,7 @@ exports.refreshAccessToken = async (req, res) => {
 
 		res.cookie('access-token', newAccessToken, {
 			httpOnly: true,
-			secure: process.env.NODE_ENV !== 'development',
+			secure: NODE_ENV !== 'development',
 			sameSite: 'strict',
 			maxAge: 1 * 60 * 60 * 1000, // 1 hour
 		});

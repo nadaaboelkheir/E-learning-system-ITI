@@ -405,6 +405,7 @@ exports.getTeacherCourses = AsyncHandler(async (req, res) => {
 	}
 	const courses = await Course.findAll({
 		where: { teacherId },
+		order: [['createdAt', 'DESC']],
 		include: [
 			{
 				model: Section,
@@ -421,12 +422,35 @@ exports.getTeacherCourses = AsyncHandler(async (req, res) => {
 				attributes: ['id', 'title'],
 				as: 'level',
 			},
+			{
+				model: Student,
+				as: 'students',
+				attributes: ['id', 'firstName', 'lastName'],
+			},
 		],
 	});
+
 	if (!courses || courses.length === 0) {
 		return res.status(404).json({ message: 'لا يوجد دورات لهذا المدرس' });
 	}
-	return res.status(200).json({ count: courses.length, data: courses });
+
+	const sortedCourses = courses.map((course) => {
+		course.sections.sort(
+			(a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+		);
+
+		course.sections.forEach((section) => {
+			section.lessons.sort(
+				(a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+			);
+		});
+
+		return course;
+	});
+
+	return res
+		.status(200)
+		.json({ count: sortedCourses.length, data: sortedCourses });
 });
 
 exports.getTeacherSections = AsyncHandler(async (req, res) => {

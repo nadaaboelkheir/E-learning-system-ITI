@@ -52,6 +52,7 @@ exports.adminDeletePendingTeacher = AsyncHandler(async (req, res) => {
 		'تم حذف حسابك',
 		'تم حذف حسابك من قبل الإدارة',
 	);
+	return res.status(200).json({ message: 'تم حذف المدرس بنجاح' });
 });
 
 exports.adminVerifyCourse = AsyncHandler(async (req, res) => {

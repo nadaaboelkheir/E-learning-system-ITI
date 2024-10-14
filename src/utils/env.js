@@ -8,6 +8,7 @@ module.exports = {
 	DB_HOST: process.env.DB_HOST,
 	PORT: process.env.PORT,
 	DB_PORT: process.env.DB_PORT,
+	NODE_ENV: process.env.NODE_ENV,
 
 	PAYMOB_API_KEY: process.env.PAYMOB_API_KEY,
 	PAYMOB_INTEGRATION_ID_CARD: process.env.PAYMOB_INTEGRATION_ID_CARD,
