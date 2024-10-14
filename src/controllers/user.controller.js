@@ -11,13 +11,13 @@ const crypto = require('crypto');
 
 exports.getCurrentUser = AsyncHandler(async (req, res) => {
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
+
 	let user =
 		(await Student.findByPk(userId, {
-			include: {
-				model: Wallet,
-				as: 'wallet',
-				attributes: ['id', 'balance'],
-			},
+			include: [
+				{ model: Wallet, as: 'wallet', attributes: ['id', 'balance'] },
+				{ model: Level, as: 'level', attributes: ['id', 'title'] },
+			],
 		})) ||
 		(await Teacher.findByPk(userId, {
 			include: {
@@ -33,52 +33,54 @@ exports.getCurrentUser = AsyncHandler(async (req, res) => {
 				attributes: ['id', 'balance'],
 			},
 		}));
-	if (!user || user === null) {
+
+	if (!user) {
 		return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
 	}
-	let responseData;
-	if (user.role === 'admin') {
-		responseData = {
+
+	// Helper function to build response data based on the user role
+	const buildResponse = (user) => {
+		let baseData = {
 			id: user.id,
+			email: user.email,
+			picture: user.picture,
+			role: user.role,
+			walletId: user.wallet?.id || null,
+			walletBalance: user.wallet?.balance || 0,
+		};
+
+		if (user.role === 'student') {
+			return {
+				...baseData,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				levelId: user.level?.id || null,
+				levelTitle: user.level?.title || '',
+				nationalId: user.nationalID,
+				phoneNumber: user.phoneNumber,
+				parentPhoneNumber: user.parentPhoneNumber,
+			};
+		}
+
+		if (user.role === 'teacher') {
+			return {
+				...baseData,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				phoneNumber: user.phoneNumber,
+				specialization: user.specialization,
+				graduationYear: user.graduationYear,
+				educationalQualification: user.educationalQualification,
+			};
+		}
+
+		return {
+			...baseData,
 			name: user.name,
-			email: user.email,
-			picture: user.picture,
-			walletId: user.walletId,
-			role: user.role,
-			walletBalance: user.wallet.balance,
 		};
-	} else if (user.role === 'student') {
-		responseData = {
-			id: user.id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			email: user.email,
-			picture: user.picture,
-			level: user.levelId,
-			levelTitle: user.level?.title,
-			nationalId: user.nationalID,
-			phoneNumber: user.phoneNumber,
-			parentPhoneNumber: user.parentPhoneNumber,
-			walletId: user.walletId,
-			role: user.role,
-			walletBalance: user.wallet.balance,
-		};
-	} else if (user.role === 'teacher') {
-		responseData = {
-			id: user.id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			email: user.email,
-			phoneNumber: user.phoneNumber,
-			walletId: user.walletId,
-			specialization: user.specialization,
-			picture: user.picture,
-			graduationYear: user.graduationYear,
-			educationalQualification: user.educationalQualification,
-			role: user.role,
-			walletBalance: user.wallet.balance,
-		};
-	}
+	};
+
+	const responseData = buildResponse(user);
 	return res.status(200).json({ data: responseData });
 });
 
