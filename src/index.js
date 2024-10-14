@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const { PORT } = require('./utils/env');
+const { createAdminIfNotExists } = require('./configs/admin.config');
 const cors = require('cors');
 const db = require('./models');
 const session = require('express-session');
@@ -80,7 +81,8 @@ app.use((err, req, res, next) => {
 
 db.sequelize
 	.sync({ force: false })
-	.then(() => {
+	.then(async () => {
+		await createAdminIfNotExists();
 		app.listen(PORT, () => {
 			console.log(`Server is running on port ${PORT}`);
 		});
