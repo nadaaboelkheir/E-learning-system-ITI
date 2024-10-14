@@ -11,54 +11,49 @@ const {
 } = require('../models');
 const AsyncHandler = require('express-async-handler');
 
-exports.createQuiz = async (req, res) => {
+exports.createQuiz = AsyncHandler(async (req, res) => {
 	const { title, Duration, sectionId, questions } = req.body;
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 	const teacherId = req.teacher.id;
 	const transaction = await sequelize.transaction();
-	try {
-		const quiz = await Quiz.create(
+
+	const quiz = await Quiz.create(
+		{
+			title,
+			Duration,
+			sectionId,
+			teacherId,
+		},
+		{ transaction },
+	);
+	for (const question of questions) {
+		const { questionTitle, mark, answers } = question;
+		const createdQuestion = await Question.create(
 			{
-				title,
-				Duration,
-				sectionId,
-				teacherId,
+				title: questionTitle,
+				mark,
+				quizId: quiz.id,
 			},
 			{ transaction },
 		);
-		for (const question of questions) {
-			const { questionTitle, mark, answers } = question;
-			const createdQuestion = await Question.create(
+
+		const answerPromises = answers.map((answer) => {
+			return Answer.create(
 				{
-					title: questionTitle,
-					mark,
-					quizId: quiz.id,
+					title: answer.title,
+					isCorrect: answer.isCorrect,
+					questionId: createdQuestion.id,
 				},
 				{ transaction },
 			);
-
-			const answerPromises = answers.map((answer) => {
-				return Answer.create(
-					{
-						title: answer.title,
-						isCorrect: answer.isCorrect,
-						questionId: createdQuestion.id,
-					},
-					{ transaction },
-				);
-			});
-			await Promise.all(answerPromises);
-		}
-		await transaction.commit();
-		return res.status(201).json(quiz);
-	} catch (error) {
-		await transaction.rollback();
-		return res.status(500).json({ error: error.message });
+		});
+		await Promise.all(answerPromises);
 	}
-};
-
+	await transaction.commit();
+	return res.status(201).json(quiz);
+});
 // student
 exports.takeQuiz = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, quizId, answers } = req.body;
@@ -160,54 +155,44 @@ exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 		})),
 	});
 });
-exports.getQuestionsInQuiz = async (req, res) => {
+exports.getQuestionsInQuiz = AsyncHandler(async (req, res) => {
 	const { id } = req.params;
-	try {
-		const questions = await Question.findAll({
-			where: { quizId: id },
-			attributes: ['id', 'title', 'mark'],
-			include: [
-				{
-					model: Answer,
-					attributes: ['id', 'title', 'isCorrect'],
-				},
-			],
-		});
-		return res.status(200).json({ data: questions });
-	} catch (error) {
-		return res.status(500).json({ error: error.message });
-	}
-};
 
-exports.getAllQuizzes = async (req, res) => {
-	try {
-		const allQuizzes = await Quiz.findAll({
-			attributes: ['id', 'title', 'createdAt'],
-			include: [
-				{
-					model: Course,
-					as: 'course',
-					attributes: ['id', 'title'],
-				},
-				{
-					model: Student,
-					as: 'student',
-					attributes: ['id', 'firstName', 'lastName'],
-				},
-				{
-					model: Teacher,
-					as: 'teacher',
-					attributes: ['id', 'firstName', 'lastName'],
-				},
-			],
-		});
-		return res
-			.status(200)
-			.json({ count: allQuizzes.length, data: allQuizzes });
-	} catch (error) {
-		return res.status(500).json({ error: error.message });
-	}
-};
+	const questions = await Question.findAll({
+		where: { quizId: id },
+		attributes: ['id', 'title', 'mark'],
+		include: [
+			{
+				model: Answer,
+				attributes: ['id', 'title', 'isCorrect'],
+			},
+		],
+	});
+	return res.status(200).json({ data: questions });
+});
+exports.getAllQuizzes = AsyncHandler(async (req, res) => {
+	const allQuizzes = await Quiz.findAll({
+		attributes: ['id', 'title', 'createdAt'],
+		include: [
+			{
+				model: Course,
+				as: 'course',
+				attributes: ['id', 'title'],
+			},
+			{
+				model: Student,
+				as: 'student',
+				attributes: ['id', 'firstName', 'lastName'],
+			},
+			{
+				model: Teacher,
+				as: 'teacher',
+				attributes: ['id', 'firstName', 'lastName'],
+			},
+		],
+	});
+	return res.status(200).json({ count: allQuizzes.length, data: allQuizzes });
+});
 exports.getQuizForSection = AsyncHandler(async (req, res) => {
 	const { sectionId } = req.params;
 

@@ -17,6 +17,7 @@ const {
 	QuizAttempt,
 } = require('../models');
 const cloudinary = require('../configs/cloudinary.config');
+
 const deleteImageFromCloudinary = async (imageUrl) => {
 	try {
 		const publicId = imageUrl.split('/').pop().split('.')[0];
