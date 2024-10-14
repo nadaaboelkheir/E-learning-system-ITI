@@ -16,11 +16,12 @@ const {
 const { protectRoute } = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
 const validate = require('../middlewares/validators.mw');
-const router = express.Router();
+const { upload } = require('../services/multer.service');
 const teacherCourseRouter = express.Router();
 
 teacherCourseRouter.post(
 	'/',
+	upload,
 	courseValidationRules(),
 	validate,
 	protectRoute,
@@ -42,7 +43,7 @@ const studentCoursesRouter = express.Router();
 studentCoursesRouter
 	.post('/buy-course', buyCourseWithWallet)
 	.get('/enrolled-courses/:studentId', getStudentEnrolledCourses)
-    .get('/certificate/:studentId/:courseId', getCertificateForCourse)
+	.get('/certificate/:studentId/:courseId', getCertificateForCourse);
 module.exports = {
 	studentCoursesRouter,
 	userCourseRouter,
