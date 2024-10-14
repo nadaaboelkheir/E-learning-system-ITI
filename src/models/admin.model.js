@@ -14,7 +14,6 @@ module.exports = (sequelize, DataTypes) => {
 			email: {
 				type: DataTypes.STRING,
 				allowNull: false,
-				unique: true,
 				validate: {
 					isEmail: true,
 				},
@@ -44,6 +43,7 @@ module.exports = (sequelize, DataTypes) => {
 		{
 			timestamps: true,
 		},
+		{ indexes: [{ fields: ['email'] }] },
 	);
 	Admin.associate = function (models) {
 		Admin.hasOne(models.Wallet, {

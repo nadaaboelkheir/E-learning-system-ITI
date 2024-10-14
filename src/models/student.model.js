@@ -18,7 +18,6 @@ module.exports = (sequelize, DataTypes) => {
 			email: {
 				type: DataTypes.STRING,
 				allowNull: false,
-				unique: true,
 				validate: {
 					isEmail: true,
 				},
@@ -42,7 +41,6 @@ module.exports = (sequelize, DataTypes) => {
 			nationalID: {
 				type: DataTypes.STRING,
 				allowNull: false,
-				// unique: true,
 			},
 			phoneNumber: {
 				type: DataTypes.STRING,
@@ -81,6 +79,7 @@ module.exports = (sequelize, DataTypes) => {
 		{
 			timestamps: true,
 		},
+		{ indexes: [{ fields: ['email', 'nationalID'] }] },
 	);
 	Student.associate = function (models) {
 		Student.belongsToMany(models.Course, {
