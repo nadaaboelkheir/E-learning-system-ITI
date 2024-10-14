@@ -1,10 +1,16 @@
 const { Student, Teacher, Admin, Wallet, Level, Course } = require('../models');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const AsyncHandler = require('express-async-handler');
+const { sendVerificationEmail } = require('../utils/mailer');
+const {
+	setTemporaryData,
+	getTemporaryData,
+	clearTemporaryData,
+} = require('../utils/helperFunctions');
+const crypto = require('crypto');
+
 exports.getCurrentUser = AsyncHandler(async (req, res) => {
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
-
 	let user =
 		(await Student.findByPk(userId, {
 			include: {
@@ -75,6 +81,7 @@ exports.getCurrentUser = AsyncHandler(async (req, res) => {
 	}
 	return res.status(200).json({ data: responseData });
 });
+
 exports.updateUserProfile = AsyncHandler(async (req, res) => {
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
 	const user =
@@ -254,7 +261,7 @@ exports.getUserById = AsyncHandler(async (req, res) => {
 		});
 	}
 
-	return res.status(404).json({ message: 'User not found.' });
+	return res.status(404).json({ message: 'هذا المستخدم غير موجود' });
 });
 
 exports.resetPassword = AsyncHandler(async (req, res) => {
@@ -287,12 +294,45 @@ exports.forgetPassword = AsyncHandler(async (req, res) => {
 	if (!user) {
 		return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
 	}
-	const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-		expiresIn: '1h',
+
+	const token = crypto.randomBytes(20).toString('hex');
+
+	setTemporaryData(token, email);
+	const resetLink = `http://yourapp.com/reset-password?token=${token}`;
+
+	await sendVerificationEmail(
+		email,
+		'Password Reset Request',
+		`You requested a password reset. Click the link to reset your password: ${resetLink}`,
+	);
+
+	return res.status(200).json({
+		message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
 	});
-	const url = `http://localhost:3000/reset-password?token=${token}`;
-	sendEmail(user.email, 'Reset Password', url);
-	return res
-		.status(200)
-		.json({ message: 'تم ارسال رابط استعادة كلمة المرور بنجاح' });
+});
+
+exports.resetPasswordToken = AsyncHandler(async (req, res) => {
+	const { token } = req.query;
+	const { newPassword } = req.body;
+
+	const email = getTemporaryData(token);
+	if (!email) {
+		return res.status(400).json({
+			message: 'رمز إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية',
+		});
+	}
+
+	const user =
+		(await Student.findOne({ where: { email } })) ||
+		(await Teacher.findOne({ where: { email } })) ||
+		(await Admin.findOne({ where: { email } }));
+	if (!user) {
+		return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
+	}
+
+	const hashedPassword = await bcrypt.hash(newPassword, 10);
+	await user.update({ password: hashedPassword });
+
+	clearTemporaryData(token);
+	return res.status(200).json({ message: 'تم تغيير كلمة المرور بنجاح' });
 });

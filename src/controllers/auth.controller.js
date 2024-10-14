@@ -14,6 +14,7 @@ const { generateTokenAndSetCookie } = require('../utils/generateToken');
 const { Op } = require('sequelize');
 const { activeDeviceLimit } = require('../utils/helperFunctions');
 const AsyncHandler = require('express-async-handler');
+
 exports.registerStudent = AsyncHandler(async (req, res) => {
 	const {
 		firstName,
@@ -30,7 +31,7 @@ exports.registerStudent = AsyncHandler(async (req, res) => {
 		where: { id: levelId },
 	});
 	if (!level) {
-		return res.status(404).json({ error: 'المستوى غير موجود' });
+		return res.status(404).json({ message: 'المستوى غير موجود' });
 	}
 
 	const existingStudent = await Student.findOne({
@@ -40,7 +41,7 @@ exports.registerStudent = AsyncHandler(async (req, res) => {
 	});
 
 	if (existingStudent) {
-		return res.status(400).json({ error: 'المستخدم موجود بالفعل' });
+		return res.status(400).json({ message: 'المستخدم موجود بالفعل' });
 	}
 
 	const hashedPassword = await bcrypt.hash(password, 10);
@@ -88,7 +89,7 @@ exports.verifyOtp = AsyncHandler(async (req, res) => {
 	if (!email) {
 		return res
 			.status(400)
-			.json({ error: 'البريد الالكتروني غير موجود في الجلسة' });
+			.json({ message: 'البريد الالكتروني غير موجود في الجلسة' });
 	}
 
 	const student = await Student.findOne({ where: { email } });
@@ -99,12 +100,12 @@ exports.verifyOtp = AsyncHandler(async (req, res) => {
 	if (student.isEmailVerified) {
 		return res
 			.status(400)
-			.json({ error: 'البريد الالكتروني تم التحقق منه بالفعل' });
+			.json({ message: 'البريد الالكتروني تم التحقق منه بالفعل' });
 	}
 
 	if (Date.now() > otpExpiry) {
 		return res.status(400).json({
-			error: 'لقد انتهت صلاحية رمز التحقق. يرجى المحاولة مرة أخرى',
+			message: 'لقد انتهت صلاحية رمز التحقق. يرجى المحاولة مرة أخرى',
 		});
 	}
 
@@ -112,6 +113,12 @@ exports.verifyOtp = AsyncHandler(async (req, res) => {
 		await Student.update({ isEmailVerified: true }, { where: { email } });
 		req.session.otp = null;
 		req.session.otpExpiry = null;
+		req.session.email = null;
+		req.session.destroy((err) => {
+			if (err) {
+				return res.status(500).json({ message: 'حدث خطأ ما' });
+			}
+		});
 
 		return res
 			.status(200)
@@ -119,15 +126,16 @@ exports.verifyOtp = AsyncHandler(async (req, res) => {
 	} else {
 		return res
 			.status(400)
-			.json({ error: 'رمز التحقق غير صحيح. يرجى المحاولة مرة أخرى' });
+			.json({ message: 'رمز التحقق غير صحيح. يرجى المحاولة مرة أخرى' });
 	}
 });
+
 exports.resendOtp = AsyncHandler(async (req, res) => {
 	const { email } = req.session;
 
 	if (!email) {
 		return res.status(400).json({
-			error: 'برجاء التحقق من بريدك الالكتروني لاكمال التسجيل',
+			message: 'برجاء التحقق من بريدك الالكتروني لاكمال التسجيل',
 		});
 	}
 
@@ -172,7 +180,7 @@ exports.signUpTeacher = AsyncHandler(async (req, res) => {
 		where: { email },
 	});
 	if (existingTeacher || existUser) {
-		return res.status(400).json({ error: 'المستخدم موجود بالفعل' });
+		return res.status(400).json({ message: 'المستخدم موجود بالفعل' });
 	}
 
 	if (phoneNumber) {
@@ -183,7 +191,9 @@ exports.signUpTeacher = AsyncHandler(async (req, res) => {
 			where: { phoneNumber },
 		});
 		if (existingTeacher || existUser) {
-			return res.status(400).json({ error: 'رقم الهاتف مستخدم بالفعل' });
+			return res
+				.status(400)
+				.json({ message: 'رقم الهاتف مستخدم بالفعل' });
 		}
 	}
 
@@ -220,7 +230,7 @@ exports.userLogin = AsyncHandler(async (req, res) => {
 	});
 	if (student?.isEmailVerified === false) {
 		return res.status(400).json({
-			error: 'برجاء التحقق من بريدك الالكتروني لاكمال التسجيل',
+			message: 'برجاء التحقق من بريدك الالكتروني لاكمال التسجيل',
 		});
 	}
 	const teacher = await Teacher.findOne({
@@ -228,7 +238,7 @@ exports.userLogin = AsyncHandler(async (req, res) => {
 	});
 	if (teacher?.isEmailVerified === false) {
 		return res.status(400).json({
-			error: 'برجاء انتظار موافقة المسئول علي انضمامك للمنصة',
+			message: 'برجاء انتظار موافقة المسئول علي انضمامك للمنصة',
 		});
 	}
 	const admin = await Admin.findOne({ where: { email } });
@@ -238,7 +248,7 @@ exports.userLogin = AsyncHandler(async (req, res) => {
 	if (!user || !(await bcrypt.compare(password, user.password))) {
 		return res
 			.status(401)
-			.json({ error: 'خطأ في البريد الالكتروني او كلمة المرور' });
+			.json({ message: 'خطأ في البريد الالكتروني او كلمة المرور' });
 	}
 
 	const role = user.role;

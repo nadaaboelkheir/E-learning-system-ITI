@@ -33,6 +33,7 @@ module.exports = (sequelize, DataTypes) => {
 			defaultValue: DataTypes.NOW,
 		},
 	});
+
 	Transaction.associate = function (models) {
 		Transaction.belongsTo(models.Wallet, {
 			foreignKey: 'walletId',

@@ -91,4 +91,3 @@ exports.refreshAccessToken = async (req, res) => {
 		return res.status(403).json({ message: 'Invalid refresh token.' });
 	}
 };
-

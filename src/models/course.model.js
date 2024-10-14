@@ -58,33 +58,39 @@ module.exports = (sequelize, DataTypes) => {
 			onDelete: 'CASCADE',
 			as: 'level',
 		});
+
 		Course.belongsTo(models.Teacher, {
 			foreignKey: 'teacherId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 			as: 'teacher',
 		});
+
 		Course.hasMany(models.Section, {
 			foreignKey: 'courseId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 			as: 'sections',
 		});
+
 		Course.hasMany(models.Review, {
 			foreignKey: 'courseId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
+
 		Course.hasMany(models.Subscription, {
 			foreignKey: 'courseId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
+
 		Course.belongsToMany(models.Student, {
 			through: models.Enrollment,
 			foreignKey: 'courseId',
 			as: 'students',
 		});
+
 		Course.hasMany(models.Quiz, {
 			foreignKey: 'courseId',
 			onUpdate: 'CASCADE',

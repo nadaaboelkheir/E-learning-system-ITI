@@ -86,6 +86,7 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		{ indexes: [{ fields: ['email'] }] },
 	);
+
 	Teacher.associate = function (models) {
 		Teacher.hasMany(models.Course, {
 			foreignKey: 'teacherId',

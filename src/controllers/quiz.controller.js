@@ -54,21 +54,22 @@ exports.createQuiz = AsyncHandler(async (req, res) => {
 	await transaction.commit();
 	return res.status(201).json(quiz);
 });
+
 // student
 exports.takeQuiz = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, quizId, answers } = req.body;
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 	const course = await Course.findOne({ where: { id: courseId } });
 	if (!course) {
-		return res.status(404).json({ message: 'Course not found' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 	const quiz = await Quiz.findOne({ where: { id: quizId } });
 	if (!quiz) {
-		return res.status(404).json({ message: 'Quiz not found' });
+		return res.status(404).json({ message: 'الاختبار غير موجود' });
 	}
 	const enrollment = await Enrollment.findOne({
 		where: {
@@ -79,15 +80,13 @@ exports.takeQuiz = AsyncHandler(async (req, res) => {
 	if (!enrollment) {
 		return res
 			.status(403)
-			.json({ message: 'You are not enrolled in this course.' });
+			.json({ message: 'حسابك غير مشترك في هذه الدورة' });
 	}
 	const existingAttempt = await QuizAttempt.findOne({
 		where: { studentId, quizId },
 	});
 	if (existingAttempt) {
-		return res
-			.status(403)
-			.json({ message: 'You have already taken this quiz.' });
+		return res.status(403).json({ message: 'لقد قمت بحل الاختبار من قبل' });
 	}
 
 	const questions = await Question.findAll({
@@ -117,17 +116,18 @@ exports.takeQuiz = AsyncHandler(async (req, res) => {
 	});
 
 	res.status(200).json({
-		message: 'Quiz submitted successfully',
+		message: 'تم حل الاختبار بنجاح',
 		score: totalScore,
 		maxScore,
 	});
 });
+
 exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 
 	const quizAttempts = await QuizAttempt.findAll({
@@ -141,9 +141,7 @@ exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 	});
 
 	if (!quizAttempts || quizAttempts.length === 0) {
-		return res
-			.status(404)
-			.json({ message: 'No quizzes taken by this student.' });
+		return res.status(404).json({ message: 'لا توجد اختبارات من قبلك' });
 	}
 
 	res.status(200).json({
@@ -155,6 +153,7 @@ exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 		})),
 	});
 });
+
 exports.getQuestionsInQuiz = AsyncHandler(async (req, res) => {
 	const { id } = req.params;
 
@@ -170,6 +169,7 @@ exports.getQuestionsInQuiz = AsyncHandler(async (req, res) => {
 	});
 	return res.status(200).json({ data: questions });
 });
+
 exports.getAllQuizzes = AsyncHandler(async (req, res) => {
 	const allQuizzes = await Quiz.findAll({
 		attributes: ['id', 'title', 'createdAt'],
@@ -193,6 +193,7 @@ exports.getAllQuizzes = AsyncHandler(async (req, res) => {
 	});
 	return res.status(200).json({ count: allQuizzes.length, data: allQuizzes });
 });
+
 exports.getQuizForSection = AsyncHandler(async (req, res) => {
 	const { sectionId } = req.params;
 
@@ -209,7 +210,7 @@ exports.getQuizForSection = AsyncHandler(async (req, res) => {
 	if (!quiz) {
 		return res
 			.status(404)
-			.json({ message: 'Quiz not found for this section.' });
+			.json({ message: 'لا توجد اختبارات متاحة لهذة الوحدة' });
 	}
 
 	return res.status(200).json(quiz);

@@ -1,5 +1,6 @@
 const { Event } = require('../models');
 const AsyncHandler = require('express-async-handler');
+
 exports.createEvent = AsyncHandler(async (req, res) => {
 	const { title, description, start, end } = req.body;
 

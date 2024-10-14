@@ -27,7 +27,6 @@ module.exports = (sequelize, DataTypes) => {
 					key: 'id',
 				},
 			},
-
 			courseId: {
 				type: DataTypes.UUID,
 				references: {
@@ -40,6 +39,7 @@ module.exports = (sequelize, DataTypes) => {
 			timestamps: true,
 		},
 	);
+
 	Review.associate = function (models) {
 		Review.belongsTo(models.Student, {
 			foreignKey: 'studentId',

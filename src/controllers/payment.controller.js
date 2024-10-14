@@ -13,161 +13,14 @@ const {
 	QuizAttempt,
 	Question,
 } = require('../models');
-const {
-	authenticateWithPaymob,
-	createPaymobOrder,
-	generatePaymentToken,
-	getPaymentUrl,
-} = require('../services/payment.service');
-const { parseISO } = require('date-fns');
 const { Op } = require('sequelize');
-
-exports.chargeStudentWallet = AsyncHandler(async (req, res) => {
-	const { amount, studentId } = req.body;
-
-	const student = await Student.findOne({ where: { id: studentId } });
-	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
-	}
-
-	const wallet = await Wallet.findOne({
-		where: { id: student.walletId, walletableType: 'Student' },
-	});
-	if (!wallet) {
-		return res.status(404).json({ message: 'Wallet not found' });
-	}
-
-	const authToken = await authenticateWithPaymob();
-
-	const orderId = await createPaymobOrder(authToken, student, amount);
-	const transactionDetails = {
-		amount: Number(amount),
-		currency: 'EGP',
-		walletId: wallet.id,
-		type: 'pending',
-		transactionDate: new Date(),
-	};
-
-	const pendingTransaction = await Transaction.create(transactionDetails);
-
-	const paymentToken = await generatePaymentToken(
-		authToken,
-		orderId,
-		student,
-		amount,
-	);
-
-	const paymentUrl = getPaymentUrl(paymentToken);
-
-	return res.json({
-		payment_url: paymentUrl,
-		transaction_id: pendingTransaction.id,
-	});
-});
-
-exports.storeTransactionDetailsAndUpdateWallet = AsyncHandler(
-	async (req, res) => {
-		const { success, student_id, currency, amount_cents, updated_at } =
-			req.body;
-		const decodedUpdatedAt = decodeURIComponent(updated_at);
-		const transactionDate = parseISO(decodedUpdatedAt);
-		const student = await Student.findOne({ where: { id: student_id } });
-		if (!student) {
-			return res.status(404).json({ message: 'Student not found' });
-		}
-
-		const wallet = await Wallet.findOne({
-			where: { id: student.walletId, walletableType: 'Student' },
-		});
-		if (!wallet) {
-			return res.status(404).json({ message: 'Wallet not found' });
-		}
-
-		const transactionDetails = {
-			amount: Number(amount_cents) / 100,
-			currency: currency,
-			walletId: wallet.id,
-			type: success ? 'completed' : 'failed',
-			transactionDate: transactionDate,
-		};
-
-		console.log('Transaction Details:', transactionDetails);
-
-		const transaction = await Transaction.create(transactionDetails);
-		console.log(transaction);
-
-		if (success) {
-			await wallet.update({
-				balance: wallet.balance + Number(amount_cents) / 100,
-			});
-			return res.status(200).json({
-				message: 'Transaction successful, wallet updated',
-				transaction,
-			});
-		} else {
-			return res.status(400).json({
-				message: 'Transaction failed, wallet not updated',
-				transaction,
-			});
-		}
-	},
-);
-
-exports.getStudentTransactions = AsyncHandler(async (req, res) => {
-	const { studentId } = req.params;
-
-	const student = await Student.findOne({ where: { id: studentId } });
-	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
-	}
-
-	const transactions = await Transaction.findAll({
-		where: { walletId: student.walletId },
-		order: [['transactionDate', 'DESC']],
-	});
-
-	if (transactions.length === 0) {
-		return res
-			.status(200)
-			.json({ message: 'No transactions found for this student.' });
-	}
-
-	return res.status(200).json({ transactions: transactions });
-});
-
-exports.getStudentWallet = AsyncHandler(async (req, res) => {
-	const { studentId } = req.params;
-
-	const student = await Student.findOne({ where: { id: studentId } });
-	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
-	}
-
-	const wallet = await Wallet.findOne({
-		where: { id: student.walletId, walletableType: 'Student' },
-	});
-
-	if (!wallet) {
-		return res.status(404).json({ message: 'Wallet not found' });
-	}
-
-	const walletDetails = {
-		id: wallet.id,
-		balance: wallet.balance,
-		walletableType: wallet.walletableType,
-		createdAt: wallet.createdAt,
-		updatedAt: wallet.updatedAt,
-	};
-
-	return res.status(200).json({ wallet: walletDetails });
-});
 
 exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, adminId } = req.body;
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 	const existingEnrollment = await Enrollment.findOne({
 		where: { studentId, courseId },
@@ -176,25 +29,25 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	if (existingEnrollment) {
 		return res
 			.status(400)
-			.json({ message: 'Student is already enrolled in this course' });
+			.json({ message: 'الطالب مشترك في هذه الدورة بالفعل' });
 	}
 
 	const wallet = await Wallet.findOne({
 		where: { id: student.walletId, walletableType: 'Student' },
 	});
 	if (!wallet) {
-		return res.status(404).json({ message: 'Wallet not found' });
+		return res.status(404).json({ message: 'المحفظة غير موجودة' });
 	}
 
 	const course = await Course.findOne({ where: { id: courseId } });
 	if (!course) {
-		return res.status(404).json({ message: 'Course not found' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 
 	if (wallet.balance < course.price) {
 		return res
 			.status(400)
-			.json({ message: 'Insufficient wallet balance to buy the course' });
+			.json({ message: 'ليس لديك رصيد كافي لشراء هذه الدورة' });
 	}
 
 	const teacherShare = course.price * 0.8;
@@ -204,7 +57,7 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const admin = await Admin.findOne({ where: { id: adminId } });
 
 	if (!teacher || !admin) {
-		return res.status(500).json({ message: 'Teacher or Admin not found' });
+		return res.status(500).json({ message: 'المدرس او المسئول غير موجود' });
 	}
 
 	const teacherWallet = await Wallet.findOne({
@@ -215,9 +68,7 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	});
 
 	if (!teacherWallet || !adminWallet) {
-		return res
-			.status(500)
-			.json({ message: 'Teacher or Admin wallet not found' });
+		return res.status(500).json({ message: 'المحفظة غير موجودة' });
 	}
 	const updatedBalance = wallet.balance - course.price;
 	await wallet.update({ balance: updatedBalance });
@@ -244,7 +95,7 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const transaction = await Transaction.create(transactionDetails);
 
 	return res.status(200).json({
-		message: 'Course purchased successfully, wallet updated',
+		message: 'تم الشراء بنجاح',
 		transaction,
 		enrollment,
 	});
@@ -255,7 +106,7 @@ exports.getStudentCourses = AsyncHandler(async (req, res) => {
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 
 	const enrollments = await Enrollment.findAll({
@@ -271,16 +122,13 @@ exports.getStudentCourses = AsyncHandler(async (req, res) => {
 
 	if (!enrollments.length) {
 		return res.status(200).json({
-			message: 'No courses found for the student',
-			courses: [],
+			message: 'لا توجد دورات مشتركة بعد',
 		});
 	}
-	console.log(enrollments);
 
 	const courses = enrollments.map((enrollment) => enrollment.Course);
-
 	return res.status(200).json({
-		message: 'Student courses retrieved successfully',
+		message: 'تمت العملية بنجاح',
 		courses,
 		numberOfCourses: courses.length,
 	});
@@ -290,11 +138,11 @@ exports.reviewEnrolledCourseByStudent = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, rate, comment } = req.body;
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 	const course = await Course.findOne({ where: { id: courseId } });
 	if (!course) {
-		return res.status(404).json({ message: 'Course not found' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 	const enrollment = await Enrollment.findOne({
 		where: {
@@ -304,9 +152,7 @@ exports.reviewEnrolledCourseByStudent = AsyncHandler(async (req, res) => {
 	});
 
 	if (!enrollment) {
-		return res
-			.status(403)
-			.json({ message: 'You are not enrolled in this course.' });
+		return res.status(403).json({ message: 'انت غير مشترك في هذه الدورة' });
 	}
 	const review = await Review.create({
 		studentId: student.id,
@@ -316,7 +162,7 @@ exports.reviewEnrolledCourseByStudent = AsyncHandler(async (req, res) => {
 	});
 
 	return res.status(200).json({
-		message: 'Course reviewed successfully',
+		message: 'تم تقييم الدورة بنجاح',
 		review,
 	});
 });
@@ -332,13 +178,11 @@ exports.getReviewsMadeByStudent = AsyncHandler(async (req, res) => {
 	});
 
 	if (reviews.length === 0) {
-		return res
-			.status(404)
-			.json({ message: 'No reviews found for this student.' });
+		return res.status(404).json({ message: 'لا توجد تقييمات بعد' });
 	}
 
 	return res.status(200).json({
-		message: 'Reviews retrieved successfully.',
+		message: 'التقييمات التي تم تقديمها',
 		reviews: reviews,
 	});
 });
@@ -348,7 +192,7 @@ exports.getCourseReviews = AsyncHandler(async (req, res) => {
 
 	const course = await Course.findOne({ where: { id: courseId } });
 	if (!course) {
-		return res.status(404).json({ message: 'Course not found' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 
 	const reviews = await Review.findAll({
@@ -361,13 +205,11 @@ exports.getCourseReviews = AsyncHandler(async (req, res) => {
 	});
 
 	if (reviews.length === 0) {
-		return res
-			.status(404)
-			.json({ message: 'No reviews found for this course.' });
+		return res.status(404).json({ message: 'لا توجد تقييمات بعد' });
 	}
 
 	return res.status(200).json({
-		message: 'Reviews retrieved successfully.',
+		message: 'التقييمات التي تم تقديمها',
 		reviews: reviews,
 	});
 });
@@ -377,15 +219,15 @@ exports.takeQuiz = AsyncHandler(async (req, res) => {
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 	const course = await Course.findOne({ where: { id: courseId } });
 	if (!course) {
-		return res.status(404).json({ message: 'Course not found' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 	const quiz = await Quiz.findOne({ where: { id: quizId } });
 	if (!quiz) {
-		return res.status(404).json({ message: 'Quiz not found' });
+		return res.status(404).json({ message: 'الاختبار غير موجود' });
 	}
 	const enrollment = await Enrollment.findOne({
 		where: {
@@ -394,9 +236,7 @@ exports.takeQuiz = AsyncHandler(async (req, res) => {
 		},
 	});
 	if (!enrollment) {
-		return res
-			.status(403)
-			.json({ message: 'You are not enrolled in this course.' });
+		return res.status(403).json({ message: 'انت غير مشترك في هذه الدورة' });
 	}
 	const existingAttempt = await QuizAttempt.findOne({
 		where: { studentId, quizId },
@@ -404,7 +244,7 @@ exports.takeQuiz = AsyncHandler(async (req, res) => {
 	if (existingAttempt) {
 		return res
 			.status(403)
-			.json({ message: 'You have already taken this quiz.' });
+			.json({ message: 'تم تقديم هذا الاختبار من قبل' });
 	}
 
 	const questions = await Question.findAll({
@@ -435,7 +275,7 @@ exports.takeQuiz = AsyncHandler(async (req, res) => {
 	});
 
 	res.status(200).json({
-		message: 'Quiz submitted successfully',
+		message: 'تم حل الاختبار بنجاح',
 		score: totalScore,
 		maxScore,
 	});
@@ -446,7 +286,7 @@ exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 
 	const quizAttempts = await QuizAttempt.findAll({
@@ -460,9 +300,7 @@ exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 	});
 
 	if (!quizAttempts || quizAttempts.length === 0) {
-		return res
-			.status(404)
-			.json({ message: 'No quizzes taken by this student.' });
+		return res.status(404).json({ message: 'لا توجد اختبارات من قبلك' });
 	}
 
 	res.status(200).json({
@@ -480,7 +318,7 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 
 	const quizAttempts = await QuizAttempt.findAll({
@@ -488,9 +326,7 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 	});
 
 	if (!quizAttempts || quizAttempts.length === 0) {
-		return res
-			.status(404)
-			.json({ message: 'No quizzes found for this student.' });
+		return res.status(404).json({ message: 'لا توجد اختبارات من قبلك' });
 	}
 
 	let totalScore = 0;
@@ -531,9 +367,7 @@ exports.getCourseRating = AsyncHandler(async (req, res) => {
 	});
 
 	if (!reviews || reviews.length === 0) {
-		return res
-			.status(404)
-			.json({ message: 'No reviews found for this course.' });
+		return res.status(404).json({ message: 'لا توجد تقييمات لهذه الدورة' });
 	}
 
 	const totalRating = reviews.reduce((sum, review) => sum + review.rate, 0);
@@ -555,9 +389,7 @@ exports.getTeacherRatingFromCourses = AsyncHandler(async (req, res) => {
 	});
 
 	if (!courses || courses.length === 0) {
-		return res
-			.status(404)
-			.json({ message: 'No courses found for this teacher.' });
+		return res.status(404).json({ message: 'لا يوجد دورات لهذا المدرس' });
 	}
 
 	let totalRating = 0;
@@ -583,7 +415,7 @@ exports.getTeacherRatingFromCourses = AsyncHandler(async (req, res) => {
 
 	if (totalReviews === 0) {
 		return res.status(404).json({
-			message: 'No reviews found for the courses taught by this teacher.',
+			message: 'لا يوجد تقييمات لهذا المدرس في جميع الدورات',
 		});
 	}
 
@@ -602,7 +434,7 @@ exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 	if (!parentPhoneNumber) {
 		return res
 			.status(400)
-			.json({ message: 'Parent phone number is required.' });
+			.json({ message: 'رقم هاتف ولي الأمر غير موجود' });
 	}
 	const students = await Student.findAll({
 		where: {
@@ -610,9 +442,7 @@ exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 		},
 	});
 	if (!students.length) {
-		return res
-			.status(404)
-			.json({ message: 'No students found for this parent.' });
+		return res.status(404).json({ message: 'لا يوجد طلاب لهذا الرقم' });
 	}
 
 	return res.status(200).json({ students });

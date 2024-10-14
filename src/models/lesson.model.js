@@ -36,6 +36,7 @@ module.exports = (sequelize, DataTypes) => {
 			timestamps: true,
 		},
 	);
+
 	Lesson.associate = function (models) {
 		Lesson.belongsTo(models.Section, {
 			foreignKey: 'sectionId',
