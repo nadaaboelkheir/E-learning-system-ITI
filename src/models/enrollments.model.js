@@ -37,10 +37,12 @@ module.exports = (sequelize, DataTypes) => {
 			timestamps: true,
 		},
 	);
+
 	Enrollment.associate = function (models) {
 		Enrollment.belongsTo(models.Student, {
 			foreignKey: 'studentId',
 		});
+
 		Enrollment.belongsTo(models.Course, {
 			foreignKey: 'courseId',
 		});

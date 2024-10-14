@@ -31,17 +31,18 @@ const deleteImageFromCloudinary = async (imageUrl) => {
 		throw new Error('Failed to delete image from Cloudinary');
 	}
 };
+
 exports.createFullCourse = AsyncHandler(async (req, res) => {
 	if (!req.file) {
-		return res.status(400).json({ error: 'الرجاء تحميل صورة الدورة' });
+		return res.status(400).json({ message: 'الرجاء تحميل صورة الدورة' });
 	}
 
 	if (req.role !== 'teacher') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 
 	if (!req.teacher.isEmailVerified) {
-		return res.status(401).json({ error: 'البريد الالكتروني غير مفعل' });
+		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
 	}
 
 	const { title, description, levelId, price, discountedPrice, sections } =
@@ -55,7 +56,7 @@ exports.createFullCourse = AsyncHandler(async (req, res) => {
 		const level = await Level.findOne({ where: { id: levelId } });
 		if (!level) {
 			await transaction.rollback();
-			return res.status(404).json({ error: 'المستوى غير موجود' });
+			return res.status(404).json({ message: 'المستوى غير موجود' });
 		}
 
 		const existingCourse = await Course.findOne({
@@ -64,7 +65,7 @@ exports.createFullCourse = AsyncHandler(async (req, res) => {
 		});
 		if (existingCourse) {
 			await transaction.rollback();
-			return res.status(409).json({ error: 'الدورة موجودة بالفعل' });
+			return res.status(409).json({ message: 'الدورة موجودة بالفعل' });
 		}
 
 		const courseData = {
@@ -80,16 +81,51 @@ exports.createFullCourse = AsyncHandler(async (req, res) => {
 
 		if (!course.id) {
 			await transaction.rollback();
-			return res.status(500).json({ error: 'خطأ في إنشاء الدورة' });
+			return res.status(500).json({ message: 'خطأ في إنشاء الدورة' });
 		}
 
 		for (const sectionData of sections) {
+			if (!sectionData.title || !sectionData.title.trim()) {
+				await transaction.rollback();
+				return res
+					.status(400)
+					.json({ message: 'يجب إدخال عنوان لكل وحدة' });
+			}
+
 			const section = await Section.create(
 				{ title: sectionData.title, courseId: course.id },
 				{ transaction },
 			);
 
 			for (const lessonData of sectionData.lessons) {
+				if (!lessonData.title || !lessonData.title.trim()) {
+					await transaction.rollback();
+					return res
+						.status(400)
+						.json({ message: 'يجب إدخال عنوان لكل درس' });
+				}
+
+				if (!lessonData.description || !lessonData.description.trim()) {
+					await transaction.rollback();
+					return res
+						.status(400)
+						.json({ message: 'يجب إدخال وصف لكل درس' });
+				}
+
+				if (!lessonData.pdfUrl || !lessonData.pdfUrl.trim()) {
+					await transaction.rollback();
+					return res
+						.status(400)
+						.json({ message: 'يجب ادخال رابط ملف الدرس' });
+				}
+
+				if (!lessonData.videoUrl || !lessonData.videoUrl.trim()) {
+					await transaction.rollback();
+					return res
+						.status(400)
+						.json({ message: 'يجب ادخال رابط فيديو لكل درس' });
+				}
+
 				await Lesson.create(
 					{
 						title: lessonData.title,
@@ -107,10 +143,9 @@ exports.createFullCourse = AsyncHandler(async (req, res) => {
 		return res.status(201).json({ message: 'تم انشاء الدورة بنجاح' });
 	} catch (error) {
 		await transaction.rollback();
-		console.error('Error creating course:', error);
 		return res
 			.status(500)
-			.json({ error: 'An error occurred while creating the course.' });
+			.json({ error: 'خطأ في إنشاء الدورة. الرجاء المحاولة مرة أخرى' });
 	}
 });
 
@@ -120,7 +155,7 @@ exports.updateCourse = AsyncHandler(async (req, res) => {
 		req.body;
 
 	if (req.role !== 'teacher') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 
 	const teacherId = req.teacher.id;
@@ -134,7 +169,7 @@ exports.updateCourse = AsyncHandler(async (req, res) => {
 
 		if (!course) {
 			await transaction.rollback();
-			return res.status(404).json({ error: 'الدورة غير موجودة' });
+			return res.status(404).json({ message: 'الدورة غير موجودة' });
 		}
 
 		// Update course details only if new values are provided
@@ -201,7 +236,7 @@ exports.updateCourse = AsyncHandler(async (req, res) => {
 		} else if (section !== undefined) {
 			return res
 				.status(400)
-				.json({ error: 'يجب عليك اضافة الدروس بشكل صحيح' });
+				.json({ message: 'يجب عليك اضافة الدروس بشكل صحيح' });
 		}
 
 		await transaction.commit();
@@ -210,7 +245,6 @@ exports.updateCourse = AsyncHandler(async (req, res) => {
 			message: 'تم تحديث الدورة بنجاح',
 		});
 	} catch (error) {
-		console.error('Error updating course:', error);
 		await transaction.rollback();
 		res.status(500).json({ error: 'حدث خطأ أثناء تحديث الدورة' });
 	}
@@ -337,7 +371,7 @@ exports.deleteCourse = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
 
 	if (req.role !== 'teacher' && req.role !== 'admin') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 
 	let course;
@@ -352,7 +386,7 @@ exports.deleteCourse = AsyncHandler(async (req, res) => {
 		});
 	}
 	if (!course) {
-		return res.status(404).json({ error: 'الدورة غير موجودة' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 	const imageUrl = course.image;
 	await deleteImageFromCloudinary(imageUrl);
@@ -361,16 +395,17 @@ exports.deleteCourse = AsyncHandler(async (req, res) => {
 });
 
 exports.getTeacherCourses = AsyncHandler(async (req, res) => {
-	const { teacherId } = req.params;
+	const teacherId = req.params.teacherId || req.teacher.id;
 
 	const teacher = await Teacher.findOne({
 		where: { id: teacherId },
 	});
 	if (!teacher) {
-		return res.status(404).json({ error: 'المدرس غير موجود' });
+		return res.status(404).json({ message: 'المدرس غير موجود' });
 	}
 	const courses = await Course.findAll({
 		where: { teacherId },
+		order: [['createdAt', 'DESC']],
 		include: [
 			{
 				model: Section,
@@ -387,12 +422,35 @@ exports.getTeacherCourses = AsyncHandler(async (req, res) => {
 				attributes: ['id', 'title'],
 				as: 'level',
 			},
+			{
+				model: Student,
+				as: 'students',
+				attributes: ['id', 'firstName', 'lastName'],
+			},
 		],
 	});
+
 	if (!courses || courses.length === 0) {
-		return res.status(404).json({ error: 'لا يوجد دورات لهذا المدرس' });
+		return res.status(404).json({ message: 'لا يوجد دورات لهذا المدرس' });
 	}
-	return res.status(200).json({ count: courses.length, data: courses });
+
+	const sortedCourses = courses.map((course) => {
+		course.sections.sort(
+			(a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+		);
+
+		course.sections.forEach((section) => {
+			section.lessons.sort(
+				(a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+			);
+		});
+
+		return course;
+	});
+
+	return res
+		.status(200)
+		.json({ count: sortedCourses.length, data: sortedCourses });
 });
 
 exports.getTeacherSections = AsyncHandler(async (req, res) => {
@@ -413,7 +471,7 @@ exports.getTeacherSections = AsyncHandler(async (req, res) => {
 	});
 
 	if (sections.length === 0) {
-		return res.status(404).json({ error: 'لا يوجد وحدات لهذا المدرس' });
+		return res.status(404).json({ message: 'لا يوجد وحدات لهذا المدرس' });
 	}
 
 	return res.status(200).json({ count: sections.length, data: sections });
@@ -428,7 +486,7 @@ exports.getCourseDetails = AsyncHandler(async (req, res) => {
 				{
 					model: Section,
 					as: 'sections',
-					attributes: ['id', 'title'],
+					attributes: ['id', 'title', 'createdAt'],
 					include: [
 						{
 							model: Lesson,
@@ -439,6 +497,7 @@ exports.getCourseDetails = AsyncHandler(async (req, res) => {
 								'videoUrl',
 								'description',
 								'pdfUrl',
+								'createdAt',
 							],
 						},
 					],
@@ -457,10 +516,9 @@ exports.getCourseDetails = AsyncHandler(async (req, res) => {
 		});
 
 		if (!course) {
-			return res.status(404).json({ error: 'الدورة غير موجودة' });
+			return res.status(404).json({ message: 'الدورة غير موجودة' });
 		}
 
-		// Calculate the total number of lessons
 		const lessonsCount = Array.isArray(course.sections)
 			? course.sections.reduce((count, section) => {
 					return (
@@ -472,23 +530,25 @@ exports.getCourseDetails = AsyncHandler(async (req, res) => {
 				}, 0)
 			: 0;
 
-		// Move teacher data to main response object
 		const { id: teacherId, firstName, lastName } = course.teacher;
+		const { title: levelTitle } = course.level;
 
-		// Move level data to main response object
-		const { levelTitle } = course.level;
+		const sortedSections = course.sections.sort(
+			(a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+		);
 
-		// Prepare sections with lessons included
-		const sectionsWithLessons = course.sections.map((section) => ({
+		const sectionsWithLessons = sortedSections.map((section) => ({
 			id: section.id,
 			title: section.title,
-			lessons: section.lessons.map((lesson) => ({
-				id: lesson.id,
-				title: lesson.title,
-				videoUrl: lesson.videoUrl,
-				description: lesson.description,
-				pdfUrl: lesson.pdfUrl,
-			})),
+			lessons: section.lessons
+				.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+				.map((lesson) => ({
+					id: lesson.id,
+					title: lesson.title,
+					videoUrl: lesson.videoUrl,
+					description: lesson.description,
+					pdfUrl: lesson.pdfUrl,
+				})),
 		}));
 
 		return res.status(200).json({
@@ -498,13 +558,13 @@ exports.getCourseDetails = AsyncHandler(async (req, res) => {
 			image: course.image,
 			levelId: course.levelId,
 			levelTitle,
-			teacherId, // Add teacherId to the main object
-			teacherName: `${firstName} ${lastName}`, // Combine first and last name
+			teacherId,
+			teacherName: `${firstName} ${lastName}`,
 			price: course.price,
 			createdAt: course.createdAt,
 			updatedAt: course.updatedAt,
-			lessonsCount, // Add the number of lessons
-			sections: sectionsWithLessons, // Include sections with lessons
+			lessonsCount,
+			sections: sectionsWithLessons,
 		});
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
@@ -530,7 +590,7 @@ exports.getAllCourses = AsyncHandler(async (req, res) => {
 		],
 	});
 	if (!courses || courses.length === 0) {
-		return res.status(404).json({ error: 'لا يوجد دورات' });
+		return res.status(404).json({ message: 'لا يوجد دورات' });
 	}
 	const formattedCourses = courses.map((course) => ({
 		id: course.id,
@@ -566,19 +626,20 @@ exports.getStudentsInCourse = AsyncHandler(async (req, res) => {
 		],
 	});
 	if (!course) {
-		return res.status(404).json({ error: 'الدورة غير موجودة' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 	return res
 		.status(200)
 		.json({ count: course.students.length, data: course.students });
 });
+
 // student
 exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, adminId } = req.body;
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 	const existingEnrollment = await Enrollment.findOne({
 		where: { studentId, courseId },
@@ -587,25 +648,25 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	if (existingEnrollment) {
 		return res
 			.status(400)
-			.json({ message: 'Student is already enrolled in this course' });
+			.json({ message: 'الطالب مشترك في هذه الدورة بالفعل' });
 	}
 
 	const wallet = await Wallet.findOne({
 		where: { id: student.walletId, walletableType: 'Student' },
 	});
 	if (!wallet) {
-		return res.status(404).json({ message: 'Wallet not found' });
+		return res.status(404).json({ message: 'المحفظة غير موجودة' });
 	}
 
 	const course = await Course.findOne({ where: { id: courseId } });
 	if (!course) {
-		return res.status(404).json({ message: 'Course not found' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 
 	if (wallet.balance < course.price) {
 		return res
 			.status(400)
-			.json({ message: 'Insufficient wallet balance to buy the course' });
+			.json({ message: 'ليس لديك رصيد كافي لشراء هذه الدورة' });
 	}
 
 	const teacherShare = course.price * 0.8;
@@ -615,7 +676,9 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const admin = await Admin.findOne({ where: { id: adminId } });
 
 	if (!teacher || !admin) {
-		return res.status(500).json({ message: 'Teacher or Admin not found' });
+		return res
+			.status(500)
+			.json({ message: 'المدرس او الإدارة غير موجودة' });
 	}
 
 	const teacherWallet = await Wallet.findOne({
@@ -626,9 +689,7 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	});
 
 	if (!teacherWallet || !adminWallet) {
-		return res
-			.status(500)
-			.json({ message: 'Teacher or Admin wallet not found' });
+		return res.status(500).json({ message: 'المحفظة غير موجودة' });
 	}
 	const updatedBalance = wallet.balance - course.price;
 	await wallet.update({ balance: updatedBalance });
@@ -655,17 +716,18 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const transaction = await Transaction.create(transactionDetails);
 
 	return res.status(200).json({
-		message: 'Course purchased successfully, wallet updated',
+		message: 'تمت العملية بنجاح',
 		transaction,
 		enrollment,
 	});
 });
+
 exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
-	const { studentId } = req.params;
+	const studentId = req.params.studentId || req.student.id;
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'هذا الطالب غير موجود' });
 	}
 
 	const enrollments = await Enrollment.findAll({
@@ -673,7 +735,6 @@ exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
 		include: [
 			{
 				model: Course,
-
 				attributes: ['id', 'title', 'description', 'price', 'image'],
 			},
 		],
@@ -681,20 +742,19 @@ exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
 
 	if (!enrollments.length) {
 		return res.status(200).json({
-			message: 'No courses found for the student',
-			courses: [],
+			message: 'لا توجد دورات مشتركة بعد',
 		});
 	}
-	console.log(enrollments);
 
 	const courses = enrollments.map((enrollment) => enrollment.Course);
 
 	return res.status(200).json({
-		message: 'Student courses retrieved successfully',
+		message: 'تمت العملية بنجاح',
 		courses,
 		numberOfCourses: courses.length,
 	});
 });
+
 exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
 	const { courseId, studentId } = req.params;
 
@@ -708,7 +768,7 @@ exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
 	if (!enrollment) {
 		return res
 			.status(404)
-			.json({ message: 'User not enrolled in this course' });
+			.json({ message: 'هذا الطالب ليس مشترك في هذه الدورة' });
 	}
 
 	const quizzes = await Quiz.findAll({
@@ -718,7 +778,7 @@ exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
 	if (quizzes.length === 0) {
 		return res
 			.status(404)
-			.json({ message: 'No quizzes available for this course' });
+			.json({ message: 'لا توجد اختبارات متاحة لهذة الدورة' });
 	}
 
 	let totalGrade = 0;
@@ -738,13 +798,11 @@ exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
 	}
 
 	if (!allQuizzesCompleted) {
-		return res
-			.status(400)
-			.json({ message: 'Not all quizzes have been taken' });
+		return res.status(400).json({ message: 'لم تكمل جميع الاختبارات بعد' });
 	}
 
 	return res.status(200).json({
-		message: 'All quizzes have been taken',
+		message: 'تمت العملية بنجاح',
 		totalGrade,
 		averageGrade: totalGrade / quizzes.length,
 	});

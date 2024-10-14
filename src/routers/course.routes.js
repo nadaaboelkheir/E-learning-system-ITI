@@ -1,5 +1,4 @@
 const express = require('express');
-
 const {
 	createFullCourse,
 	updateCourse,
@@ -33,6 +32,7 @@ teacherCourseRouter.delete('/:courseId', protectRoute, deleteCourse);
 const userCourseRouter = express.Router();
 userCourseRouter.get('/teacher-courses/:teacherId', getTeacherCourses);
 userCourseRouter.get('/teacher-sections', protectRoute, getTeacherSections);
+userCourseRouter.get('/teacher/courses', protectRoute, getTeacherCourses);
 userCourseRouter.get('/details/:id', getCourseDetails);
 userCourseRouter.get('/all-courses', getAllCourses);
 const adminCourseRouter = express.Router();
@@ -43,6 +43,7 @@ const studentCoursesRouter = express.Router();
 studentCoursesRouter
 	.post('/buy-course', buyCourseWithWallet)
 	.get('/enrolled-courses/:studentId', getStudentEnrolledCourses)
+	.get('/enrolled/courses', protectRoute, getStudentEnrolledCourses)
 	.get('/certificate/:studentId/:courseId', getCertificateForCourse);
 module.exports = {
 	studentCoursesRouter,

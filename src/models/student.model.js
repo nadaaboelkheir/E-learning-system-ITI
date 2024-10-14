@@ -81,6 +81,7 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		{ indexes: [{ fields: ['email', 'nationalID'] }] },
 	);
+
 	Student.associate = function (models) {
 		Student.belongsToMany(models.Course, {
 			through: models.Enrollment,
@@ -88,23 +89,27 @@ module.exports = (sequelize, DataTypes) => {
 			as: 'courses',
 			constraints: false,
 		});
+
 		Student.hasMany(models.Transaction, {
 			foreignKey: 'studentId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 			constraints: false,
 		});
+
 		Student.hasMany(models.Review, {
 			foreignKey: 'studentId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 			constraints: false,
 		});
+
 		Student.hasMany(models.Subscription, {
 			foreignKey: 'studentId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
+
 		Student.hasMany(models.Quiz, {
 			foreignKey: 'studentId',
 			onUpdate: 'CASCADE',
@@ -120,12 +125,14 @@ module.exports = (sequelize, DataTypes) => {
 			},
 			as: 'wallet',
 		});
+
 		Student.belongsTo(models.Level, {
 			foreignKey: 'levelId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 			as: 'level',
 		});
+
 		Student.hasMany(models.UserSessions, {
 			foreignKey: 'userId',
 			as: 'sessions',

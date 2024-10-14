@@ -6,13 +6,13 @@ exports.deleteUser = AsyncHandler(async (req, res) => {
 	const { userId } = req.params;
 
 	if (req.role !== 'admin') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 	const student = await Student.findByPk(userId);
 	const teacher = await Teacher.findByPk(userId);
 	const user = student || teacher;
 	if (!user) {
-		return res.status(404).json({ error: 'المستخدم غير موجود' });
+		return res.status(404).json({ message: 'المستخدم غير موجود' });
 	}
 	await user.destroy();
 	return res.status(200).json({ message: 'تم حذف المستخدم بنجاح' });
@@ -22,11 +22,11 @@ exports.adminVerifyTeacher = AsyncHandler(async (req, res) => {
 	const { teacherId } = req.params;
 
 	if (req.role !== 'admin') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 	const teacher = await Teacher.findByPk(teacherId);
 	if (!teacher) {
-		return res.status(404).json({ error: 'المدرس غير موجود' });
+		return res.status(404).json({ message: 'المدرس غير موجود' });
 	}
 	await teacher.update({ isEmailVerified: true });
 	const subject = 'تم التحقق من حسابك';
@@ -40,11 +40,11 @@ exports.adminDeletePendingTeacher = AsyncHandler(async (req, res) => {
 	const { teacherId } = req.params;
 
 	if (req.role !== 'admin') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 	const teacher = await Teacher.findByPk(teacherId);
 	if (!teacher) {
-		return res.status(404).json({ error: 'المدرس غير موجود' });
+		return res.status(404).json({ message: 'المدرس غير موجود' });
 	}
 	await teacher.destroy();
 	sendVerificationEmail(
@@ -52,13 +52,14 @@ exports.adminDeletePendingTeacher = AsyncHandler(async (req, res) => {
 		'تم حذف حسابك',
 		'تم حذف حسابك من قبل الإدارة',
 	);
+	return res.status(200).json({ message: 'تم حذف المدرس بنجاح' });
 });
 
 exports.adminVerifyCourse = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
 
 	if (req.role !== 'admin') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 
 	const course = await Course.findByPk(courseId, {
@@ -66,7 +67,7 @@ exports.adminVerifyCourse = AsyncHandler(async (req, res) => {
 	});
 
 	if (!course) {
-		return res.status(404).json({ error: 'الدورة غير موجودة' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 
 	await course.update({ courseVerify: true });
@@ -98,10 +99,11 @@ exports.getAllTeachers = AsyncHandler(async (req, res) => {
 		},
 	});
 	if (!teachers || teachers.length === 0) {
-		return res.status(404).json({ error: 'لا يوجد مدرسين' });
+		return res.status(404).json({ message: 'لا يوجد مدرسين' });
 	}
 	return res.status(200).json({ count: teachers.length, data: teachers });
 });
+
 exports.getAllStudents = AsyncHandler(async (req, res) => {
 	const students = await Student.findAll({
 		where: { isEmailVerified: true },
@@ -121,23 +123,25 @@ exports.getAllStudents = AsyncHandler(async (req, res) => {
 		},
 	});
 	if (!students || students.length === 0) {
-		return res.status(404).json({ error: 'لا يوجد طلاب' });
+		return res.status(404).json({ message: 'لا يوجد طلاب' });
 	}
 	return res.status(200).json({ count: students.length, data: students });
 });
+
 exports.getAllSubjects = AsyncHandler(async (req, res) => {
 	const specializations = await Teacher.findAll({
 		attributes: ['specialization'],
 		group: ['specialization'],
 	});
 	if (!specializations || specializations.length === 0) {
-		return res.status(404).json({ error: 'لا يوجد مواد دراسية' });
+		return res.status(404).json({ message: 'لا يوجد مواد دراسية' });
 	}
 	return res.status(200).json({
 		count: specializations.length,
 		data: specializations,
 	});
 });
+
 exports.getPendingTeachersAndCourses = AsyncHandler(async (req, res) => {
 	const teachers = await Teacher.findAll({
 		where: { isEmailVerified: false },
@@ -182,11 +186,12 @@ exports.getPendingTeachersAndCourses = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json(response);
 });
+
 exports.deletePendingCourse = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
 
 	if (req.role !== 'admin') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
 
 	const course = await Course.findByPk(courseId, {
@@ -194,13 +199,13 @@ exports.deletePendingCourse = AsyncHandler(async (req, res) => {
 	});
 
 	if (!course) {
-		return res.status(404).json({ error: 'الدورة غير موجودة' });
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 
 	if (course.courseVerify) {
 		return res
 			.status(400)
-			.json({ error: 'لا يمكنك حذف دورة تم التحقق منها' });
+			.json({ message: 'لا يمكنك حذف دورة تم التحقق منها' });
 	}
 
 	const teacherEmail = course.teacher.email;
@@ -212,12 +217,13 @@ exports.deletePendingCourse = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json({ message: 'تم حذف الدورة المعلقة بنجاح' });
 });
+
 exports.getTeacherCourses = AsyncHandler(async (req, res) => {
 	const { teacherId } = req.params;
 
 	const teacher = await Teacher.findOne({ where: { id: teacherId } });
 	if (!teacher) {
-		return res.status(404).json({ error: 'المدرس غير موجود' });
+		return res.status(404).json({ message: 'المدرس غير موجود' });
 	}
 	const courses = await Course.findAll({
 		where: { teacherId },
@@ -246,7 +252,7 @@ exports.getTeacherCourses = AsyncHandler(async (req, res) => {
 		],
 	});
 	if (!courses || courses.length === 0) {
-		return res.status(404).json({ error: 'لا يوجد دورات لهذا المدرس' });
+		return res.status(404).json({ message: 'لا يوجد دورات لهذا المدرس' });
 	}
 	return res.status(200).json({ count: courses.length, data: courses });
 });

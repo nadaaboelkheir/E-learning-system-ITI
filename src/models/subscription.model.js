@@ -52,12 +52,14 @@ module.exports = (sequelize, DataTypes) => {
 			},
 		},
 	});
+
 	Subscription.associate = function (models) {
 		Subscription.belongsTo(models.Student, {
 			foreignKey: 'studentId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
+
 		Subscription.belongsTo(models.Course, {
 			foreignKey: 'courseId',
 			onUpdate: 'CASCADE',

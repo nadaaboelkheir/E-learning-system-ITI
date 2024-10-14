@@ -1,5 +1,4 @@
 const express = require('express');
-
 const {
 	getAllUsers,
 	getUserById,
@@ -7,6 +6,7 @@ const {
 	updateUserProfile,
 	resetPassword,
 	forgetPassword,
+	resetPasswordToken,
 } = require('../controllers/user.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 const { userAuthRouter } = require('./auth.routes');
@@ -25,5 +25,6 @@ router.get('/', getAllUsers);
 router.patch('/profile', protectRoute, updateUserProfile);
 router.post('/reset-password', protectRoute, resetPassword);
 router.post('/forget-password', forgetPassword);
+router.post('/reset-password-token', resetPasswordToken);
 
 module.exports = router;

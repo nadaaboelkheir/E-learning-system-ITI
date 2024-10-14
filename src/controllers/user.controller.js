@@ -1,17 +1,23 @@
 const { Student, Teacher, Admin, Wallet, Level, Course } = require('../models');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const AsyncHandler = require('express-async-handler');
+const { sendVerificationEmail } = require('../utils/mailer');
+const {
+	setTemporaryData,
+	getTemporaryData,
+	clearTemporaryData,
+} = require('../utils/helperFunctions');
+const crypto = require('crypto');
+
 exports.getCurrentUser = AsyncHandler(async (req, res) => {
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
 
 	let user =
 		(await Student.findByPk(userId, {
-			include: {
-				model: Wallet,
-				as: 'wallet',
-				attributes: ['id', 'balance'],
-			},
+			include: [
+				{ model: Wallet, as: 'wallet', attributes: ['id', 'balance'] },
+				{ model: Level, as: 'level', attributes: ['id', 'title'] },
+			],
 		})) ||
 		(await Teacher.findByPk(userId, {
 			include: {
@@ -27,54 +33,57 @@ exports.getCurrentUser = AsyncHandler(async (req, res) => {
 				attributes: ['id', 'balance'],
 			},
 		}));
-	if (!user || user === null) {
+
+	if (!user) {
 		return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
 	}
-	let responseData;
-	if (user.role === 'admin') {
-		responseData = {
+
+	// Helper function to build response data based on the user role
+	const buildResponse = (user) => {
+		let baseData = {
 			id: user.id,
+			email: user.email,
+			picture: user.picture,
+			role: user.role,
+			walletId: user.wallet?.id || null,
+			walletBalance: user.wallet?.balance || 0,
+		};
+
+		if (user.role === 'student') {
+			return {
+				...baseData,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				levelId: user.level?.id || null,
+				levelTitle: user.level?.title || '',
+				nationalId: user.nationalID,
+				phoneNumber: user.phoneNumber,
+				parentPhoneNumber: user.parentPhoneNumber,
+			};
+		}
+
+		if (user.role === 'teacher') {
+			return {
+				...baseData,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				phoneNumber: user.phoneNumber,
+				specialization: user.specialization,
+				graduationYear: user.graduationYear,
+				educationalQualification: user.educationalQualification,
+			};
+		}
+
+		return {
+			...baseData,
 			name: user.name,
-			email: user.email,
-			picture: user.picture,
-			walletId: user.walletId,
-			role: user.role,
-			walletBalance: user.wallet.balance,
 		};
-	} else if (user.role === 'student') {
-		responseData = {
-			id: user.id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			email: user.email,
-			picture: user.picture,
-			level: user.levelId,
-			levelTitle: user.level?.title,
-			nationalId: user.nationalID,
-			phoneNumber: user.phoneNumber,
-			parentPhoneNumber: user.parentPhoneNumber,
-			walletId: user.walletId,
-			role: user.role,
-			walletBalance: user.wallet.balance,
-		};
-	} else if (user.role === 'teacher') {
-		responseData = {
-			id: user.id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			email: user.email,
-			phoneNumber: user.phoneNumber,
-			walletId: user.walletId,
-			specialization: user.specialization,
-			picture: user.picture,
-			graduationYear: user.graduationYear,
-			educationalQualification: user.educationalQualification,
-			role: user.role,
-			walletBalance: user.wallet.balance,
-		};
-	}
+	};
+
+	const responseData = buildResponse(user);
 	return res.status(200).json({ data: responseData });
 });
+
 exports.updateUserProfile = AsyncHandler(async (req, res) => {
 	const userId = req.student?.id || req.teacher?.id || req.admin?.id;
 	const user =
@@ -254,7 +263,7 @@ exports.getUserById = AsyncHandler(async (req, res) => {
 		});
 	}
 
-	return res.status(404).json({ message: 'User not found.' });
+	return res.status(404).json({ message: 'هذا المستخدم غير موجود' });
 });
 
 exports.resetPassword = AsyncHandler(async (req, res) => {
@@ -287,12 +296,45 @@ exports.forgetPassword = AsyncHandler(async (req, res) => {
 	if (!user) {
 		return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
 	}
-	const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-		expiresIn: '1h',
+
+	const token = crypto.randomBytes(20).toString('hex');
+
+	setTemporaryData(token, email);
+	const resetLink = `http://yourapp.com/reset-password?token=${token}`;
+
+	await sendVerificationEmail(
+		email,
+		'Password Reset Request',
+		`You requested a password reset. Click the link to reset your password: ${resetLink}`,
+	);
+
+	return res.status(200).json({
+		message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
 	});
-	const url = `http://localhost:3000/reset-password?token=${token}`;
-	sendEmail(user.email, 'Reset Password', url);
-	return res
-		.status(200)
-		.json({ message: 'تم ارسال رابط استعادة كلمة المرور بنجاح' });
+});
+
+exports.resetPasswordToken = AsyncHandler(async (req, res) => {
+	const { token } = req.query;
+	const { newPassword } = req.body;
+
+	const email = getTemporaryData(token);
+	if (!email) {
+		return res.status(400).json({
+			message: 'رمز إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية',
+		});
+	}
+
+	const user =
+		(await Student.findOne({ where: { email } })) ||
+		(await Teacher.findOne({ where: { email } })) ||
+		(await Admin.findOne({ where: { email } }));
+	if (!user) {
+		return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
+	}
+
+	const hashedPassword = await bcrypt.hash(newPassword, 10);
+	await user.update({ password: hashedPassword });
+
+	clearTemporaryData(token);
+	return res.status(200).json({ message: 'تم تغيير كلمة المرور بنجاح' });
 });

@@ -6,7 +6,7 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
 
 	const quizAttempts = await QuizAttempt.findAll({
@@ -14,9 +14,7 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 	});
 
 	if (!quizAttempts || quizAttempts.length === 0) {
-		return res
-			.status(404)
-			.json({ message: 'No quizzes found for this student.' });
+		return res.status(404).json({ message: 'لا توجد اختبارات من قبلك' });
 	}
 
 	let totalScore = 0;
@@ -47,13 +45,14 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 		grade,
 	});
 });
+
 exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 	const { parentPhoneNumber } = req.params;
 
 	if (!parentPhoneNumber) {
 		return res
 			.status(400)
-			.json({ message: 'Parent phone number is required.' });
+			.json({ message: 'رقم هاتف ولي الأمر غير موجود' });
 	}
 	const students = await Student.findAll({
 		where: {
@@ -61,13 +60,12 @@ exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 		},
 	});
 	if (!students.length) {
-		return res
-			.status(404)
-			.json({ message: 'No students found for this parent.' });
+		return res.status(404).json({ message: 'لا يوجد طلاب لهذا الرقم' });
 	}
 
 	return res.status(200).json({ students });
 });
+
 exports.getStudentByNationalId = AsyncHandler(async (req, res) => {
 	const { nationalId } = req.params;
 

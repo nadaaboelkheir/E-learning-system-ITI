@@ -1,5 +1,6 @@
 const { Level, Student, Course, Teacher } = require('../models');
 const AsyncHandler = require('express-async-handler');
+
 exports.createLevelWithSubLevels = AsyncHandler(async (req, res) => {
 	const { title, subLevels } = req.body;
 
@@ -30,6 +31,7 @@ exports.createLevelWithSubLevels = AsyncHandler(async (req, res) => {
 		parentLevel,
 	});
 });
+
 exports.getAllLevels = AsyncHandler(async (req, res) => {
 	const levels = await Level.findAll({
 		attributes: ['id', 'title'],
@@ -56,6 +58,7 @@ exports.getAllLevels = AsyncHandler(async (req, res) => {
 	}
 	res.status(200).json({ count: levels.length, data: levels });
 });
+
 exports.deleteLevel = AsyncHandler(async (req, res) => {
 	const { id } = req.params;
 
@@ -67,6 +70,7 @@ exports.deleteLevel = AsyncHandler(async (req, res) => {
 	await level.destroy();
 	res.status(200).json({ message: 'تم حذف المستوى بنجاح' });
 });
+
 exports.getMainLevelById = AsyncHandler(async (req, res) => {
 	const { id } = req.params;
 
@@ -91,6 +95,7 @@ exports.getMainLevelById = AsyncHandler(async (req, res) => {
 
 	res.status(200).json({ data: level });
 });
+
 exports.getStudentsInLevel = AsyncHandler(async (req, res) => {
 	const { levelId } = req.params;
 
@@ -137,13 +142,14 @@ exports.getCoursesInLevel = AsyncHandler(async (req, res) => {
 		data: level.courses,
 	});
 });
+
 exports.getTeacherLevels = AsyncHandler(async (req, res) => {
 	const { teacherId } = req.params;
 
 	const teacher = await Teacher.findOne({ where: { id: teacherId } });
 
 	if (!teacher) {
-		return res.status(404).json({ error: 'Teacher not found' });
+		return res.status(404).json({ error: 'المدرس غير موجود' });
 	}
 
 	const teacherCourses = await Course.findAll({
@@ -158,9 +164,7 @@ exports.getTeacherLevels = AsyncHandler(async (req, res) => {
 	});
 
 	if (!teacherCourses || teacherCourses.length === 0) {
-		return res
-			.status(404)
-			.json({ error: 'No courses found for this teacher' });
+		return res.status(404).json({ error: 'لا توجد دورات لهذا المدرس' });
 	}
 
 	const levels = teacherCourses
@@ -170,7 +174,7 @@ exports.getTeacherLevels = AsyncHandler(async (req, res) => {
 	if (levels.length === 0) {
 		return res
 			.status(404)
-			.json({ error: "No levels found for this teacher's courses" });
+			.json({ error: 'لا توجد دورات بها مستويات لهذا المدرس' });
 	}
 
 	res.status(200).json({

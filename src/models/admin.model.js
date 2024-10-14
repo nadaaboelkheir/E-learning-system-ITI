@@ -45,6 +45,7 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		{ indexes: [{ fields: ['email'] }] },
 	);
+
 	Admin.associate = function (models) {
 		Admin.hasOne(models.Wallet, {
 			foreignKey: 'walletableId',

@@ -16,7 +16,6 @@ exports.protectRoute = async (req, res, next) => {
 
 	try {
 		const decoded = jwt.verify(token, JWT_SECRET);
-
 		jwt.verify(token, JWT_SECRET, async (err, decoded) => {
 			if (err) {
 				if (err.message === 'jwt expired') {
@@ -81,7 +80,7 @@ exports.protectRoute = async (req, res, next) => {
 					attributes: ['id', 'role', 'isEmailVerified'],
 				});
 				if (!teacher) {
-					return res.status(401).json({ error: 'Teacher not found' });
+					return res.status(401).json({ error: 'المدرس غير موجود' });
 				}
 				req.teacher = teacher;
 			} else if (decoded.role === 'admin') {

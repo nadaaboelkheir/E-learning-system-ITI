@@ -42,6 +42,7 @@ module.exports = (sequelize, DataTypes) => {
 			timestamps: true,
 		},
 	);
+
 	Level.associate = function (models) {
 		Level.hasMany(models.Course, {
 			foreignKey: 'levelId',
@@ -49,6 +50,7 @@ module.exports = (sequelize, DataTypes) => {
 			onDelete: 'CASCADE',
 			as: 'courses',
 		});
+
 		Level.hasMany(models.Level, {
 			as: 'subLevels',
 			foreignKey: 'parentLevelId',

@@ -11,7 +11,6 @@ module.exports = (sequelize, DataTypes) => {
 				type: DataTypes.STRING,
 				allowNull: false,
 			},
-
 			courseId: {
 				type: DataTypes.UUID,
 				allowNull: true,
@@ -33,11 +32,13 @@ module.exports = (sequelize, DataTypes) => {
 			onDelete: 'CASCADE',
 			as: 'course',
 		});
+
 		Section.hasMany(models.Quiz, {
 			foreignKey: 'sectionId',
 			onUpdate: 'CASCADE',
 			onDelete: 'CASCADE',
 		});
+
 		Section.hasMany(models.Lesson, {
 			foreignKey: 'sectionId',
 			onUpdate: 'CASCADE',
