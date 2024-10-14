@@ -47,6 +47,7 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 		grade,
 	});
 });
+
 exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 	const { parentPhoneNumber } = req.params;
 
@@ -68,6 +69,7 @@ exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json({ students });
 });
+
 exports.getStudentByNationalId = AsyncHandler(async (req, res) => {
 	const { nationalId } = req.params;
 

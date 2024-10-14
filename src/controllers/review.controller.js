@@ -1,9 +1,5 @@
 const AsyncHandler = require('express-async-handler');
-const {
-	Student,
-	Course,
-	Review,
-} = require('../models');
+const { Student, Course, Review } = require('../models');
 
 exports.getCourseReviews = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
@@ -33,6 +29,7 @@ exports.getCourseReviews = AsyncHandler(async (req, res) => {
 		reviews: reviews,
 	});
 });
+
 exports.getCourseRating = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
 
@@ -56,8 +53,9 @@ exports.getCourseRating = AsyncHandler(async (req, res) => {
 		totalReviews: reviews.length,
 	});
 });
+
 exports.getTeacherRatingFromCourses = AsyncHandler(async (req, res) => {
-	const { teacherId } = req.params;
+	const teacherId = req.params.teacherId || req.teacher.id;
 
 	const courses = await Course.findAll({
 		where: { teacherId },
@@ -65,9 +63,7 @@ exports.getTeacherRatingFromCourses = AsyncHandler(async (req, res) => {
 	});
 
 	if (!courses || courses.length === 0) {
-		return res
-			.status(404)
-			.json({ message: 'No courses found for this teacher.' });
+		return res.status(404).json({ message: 'لا يوجد دورات لهذا المدرس' });
 	}
 
 	let totalRating = 0;
@@ -93,7 +89,7 @@ exports.getTeacherRatingFromCourses = AsyncHandler(async (req, res) => {
 
 	if (totalReviews === 0) {
 		return res.status(404).json({
-			message: 'No reviews found for the courses taught by this teacher.',
+			message: 'لا يوجد تقييمات لهذا المدرس',
 		});
 	}
 
@@ -105,6 +101,7 @@ exports.getTeacherRatingFromCourses = AsyncHandler(async (req, res) => {
 		totalCourses: totalReviews,
 	});
 });
+
 exports.reviewEnrolledCourseByStudent = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, rate, comment } = req.body;
 	const student = await Student.findOne({ where: { id: studentId } });
@@ -139,6 +136,7 @@ exports.reviewEnrolledCourseByStudent = AsyncHandler(async (req, res) => {
 		review,
 	});
 });
+
 exports.getReviewsMadeByStudent = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
 

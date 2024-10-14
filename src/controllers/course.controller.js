@@ -31,6 +31,7 @@ const deleteImageFromCloudinary = async (imageUrl) => {
 		throw new Error('Failed to delete image from Cloudinary');
 	}
 };
+
 exports.createFullCourse = AsyncHandler(async (req, res) => {
 	if (!req.file) {
 		return res.status(400).json({ error: 'الرجاء تحميل صورة الدورة' });
@@ -84,12 +85,47 @@ exports.createFullCourse = AsyncHandler(async (req, res) => {
 		}
 
 		for (const sectionData of sections) {
+			if (!sectionData.title || !sectionData.title.trim()) {
+				await transaction.rollback();
+				return res
+					.status(400)
+					.json({ error: 'يجب إدخال عنوان لكل وحدة' });
+			}
+
 			const section = await Section.create(
 				{ title: sectionData.title, courseId: course.id },
 				{ transaction },
 			);
 
 			for (const lessonData of sectionData.lessons) {
+				if (!lessonData.title || !lessonData.title.trim()) {
+					await transaction.rollback();
+					return res
+						.status(400)
+						.json({ error: 'يجب إدخال عنوان لكل درس' });
+				}
+
+				if (!lessonData.description || !lessonData.description.trim()) {
+					await transaction.rollback();
+					return res
+						.status(400)
+						.json({ error: 'يجب إدخال وصف لكل درس' });
+				}
+
+				if (!lessonData.pdfUrl || !lessonData.pdfUrl.trim()) {
+					await transaction.rollback();
+					return res
+						.status(400)
+						.json({ error: 'يجب ادخال رابط ملف الدرس' });
+				}
+
+				if (!lessonData.videoUrl || !lessonData.videoUrl.trim()) {
+					await transaction.rollback();
+					return res
+						.status(400)
+						.json({ error: 'يجب ادخال رابط فيديو لكل درس' });
+				}
+
 				await Lesson.create(
 					{
 						title: lessonData.title,
@@ -361,7 +397,7 @@ exports.deleteCourse = AsyncHandler(async (req, res) => {
 });
 
 exports.getTeacherCourses = AsyncHandler(async (req, res) => {
-	const { teacherId } = req.params;
+	const teacherId = req.params.teacherId || req.teacher.id;
 
 	const teacher = await Teacher.findOne({
 		where: { id: teacherId },
@@ -572,6 +608,7 @@ exports.getStudentsInCourse = AsyncHandler(async (req, res) => {
 		.status(200)
 		.json({ count: course.students.length, data: course.students });
 });
+
 // student
 exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, adminId } = req.body;
@@ -660,12 +697,13 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 		enrollment,
 	});
 });
+
 exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
-	const { studentId } = req.params;
+	const studentId = req.params.studentId || req.student.id;
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
-		return res.status(404).json({ message: 'Student not found' });
+		return res.status(404).json({ message: 'هذا الطالب غير موجود' });
 	}
 
 	const enrollments = await Enrollment.findAll({
@@ -673,7 +711,6 @@ exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
 		include: [
 			{
 				model: Course,
-
 				attributes: ['id', 'title', 'description', 'price', 'image'],
 			},
 		],
@@ -681,20 +718,19 @@ exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
 
 	if (!enrollments.length) {
 		return res.status(200).json({
-			message: 'No courses found for the student',
-			courses: [],
+			message: 'لا توجد دورات مشتركة بعد',
 		});
 	}
-	console.log(enrollments);
 
 	const courses = enrollments.map((enrollment) => enrollment.Course);
 
 	return res.status(200).json({
-		message: 'Student courses retrieved successfully',
+		message: 'تمت العملية بنجاح',
 		courses,
 		numberOfCourses: courses.length,
 	});
 });
+
 exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
 	const { courseId, studentId } = req.params;
 

@@ -21,6 +21,7 @@ const {
 } = require('../services/payment.service');
 const { parseISO } = require('date-fns');
 const { Op } = require('sequelize');
+
 exports.chargeStudentWallet = AsyncHandler(async (req, res) => {
 	const { amount, studentId } = req.body;
 
@@ -63,6 +64,7 @@ exports.chargeStudentWallet = AsyncHandler(async (req, res) => {
 		transaction_id: pendingTransaction.id,
 	});
 });
+
 exports.storeTransactionDetailsAndUpdateWallet = AsyncHandler(
 	async (req, res) => {
 		const { success, student_id, currency, amount_cents, updated_at } =
@@ -110,6 +112,7 @@ exports.storeTransactionDetailsAndUpdateWallet = AsyncHandler(
 		}
 	},
 );
+
 exports.getStudentTransactions = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
 
@@ -131,6 +134,7 @@ exports.getStudentTransactions = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json({ transactions: transactions });
 });
+
 exports.getStudentWallet = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
 
@@ -157,6 +161,7 @@ exports.getStudentWallet = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json({ wallet: walletDetails });
 });
+
 exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, adminId } = req.body;
 
@@ -244,6 +249,7 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 		enrollment,
 	});
 });
+
 exports.getStudentCourses = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
 
@@ -314,6 +320,7 @@ exports.reviewEnrolledCourseByStudent = AsyncHandler(async (req, res) => {
 		review,
 	});
 });
+
 exports.getReviewsMadeByStudent = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
 
@@ -335,6 +342,7 @@ exports.getReviewsMadeByStudent = AsyncHandler(async (req, res) => {
 		reviews: reviews,
 	});
 });
+
 exports.getCourseReviews = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
 
@@ -363,6 +371,7 @@ exports.getCourseReviews = AsyncHandler(async (req, res) => {
 		reviews: reviews,
 	});
 });
+
 exports.takeQuiz = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, quizId, answers } = req.body;
 
@@ -431,6 +440,7 @@ exports.takeQuiz = AsyncHandler(async (req, res) => {
 		maxScore,
 	});
 });
+
 exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
 
@@ -464,6 +474,7 @@ exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 		})),
 	});
 });
+
 exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
 
@@ -510,6 +521,7 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 		grade,
 	});
 });
+
 exports.getCourseRating = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
 
@@ -533,6 +545,7 @@ exports.getCourseRating = AsyncHandler(async (req, res) => {
 		totalReviews: reviews.length,
 	});
 });
+
 exports.getTeacherRatingFromCourses = AsyncHandler(async (req, res) => {
 	const { teacherId } = req.params;
 
@@ -582,6 +595,7 @@ exports.getTeacherRatingFromCourses = AsyncHandler(async (req, res) => {
 		totalCourses: totalReviews,
 	});
 });
+
 exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 	const { parentPhoneNumber } = req.params;
 
@@ -603,47 +617,51 @@ exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json({ students });
 });
-exports.getStudents = AsyncHandler( async (req, res) => {
-   
-        const { firstName, page = 1, limit = 10 } = req.query; 
-        const offset = (page - 1) * limit;
 
-        const whereCondition = firstName ? { firstName: { [Op.like]: `%${firstName}%` } } : {};
+exports.getStudents = AsyncHandler(async (req, res) => {
+	const { firstName, page = 1, limit = 10 } = req.query;
+	const offset = (page - 1) * limit;
 
-        const students = await Student.findAndCountAll({
-            where: whereCondition,
-            limit: parseInt(limit),
-            offset
-        });
+	const whereCondition = firstName
+		? { firstName: { [Op.like]: `%${firstName}%` } }
+		: {};
 
-        const totalPages = Math.ceil(students.count / limit);
+	const students = await Student.findAndCountAll({
+		where: whereCondition,
+		limit: parseInt(limit),
+		offset,
+	});
 
-        res.status(200).json({
-            currentPage: page,
-            totalPages,
-            totalStudents: students.count,
-            students: students.rows
-        });
-  
-})
+	const totalPages = Math.ceil(students.count / limit);
+
+	res.status(200).json({
+		currentPage: page,
+		totalPages,
+		totalStudents: students.count,
+		students: students.rows,
+	});
+});
+
 exports.getTeachers = AsyncHandler(async (req, res) => {
-    const { firstName, page = 1, limit = 10 } = req.query; 
-    const offset = (page - 1) * limit;
+	const { firstName, page = 1, limit = 10 } = req.query;
+	const offset = (page - 1) * limit;
 
-    const whereCondition = firstName ? { firstName: { [Op.like]: `%${firstName}%` } } : {};
+	const whereCondition = firstName
+		? { firstName: { [Op.like]: `%${firstName}%` } }
+		: {};
 
-    const teachers = await Teacher.findAndCountAll({
-        where: whereCondition,
-        limit: parseInt(limit),
-        offset
-    });
+	const teachers = await Teacher.findAndCountAll({
+		where: whereCondition,
+		limit: parseInt(limit),
+		offset,
+	});
 
-    const totalPages = Math.ceil(teachers.count / limit);
+	const totalPages = Math.ceil(teachers.count / limit);
 
-    res.status(200).json({
-        currentPage: page,
-        totalPages,
-        totalTeachers: teachers.count,
-        teachers: teachers.rows
-    });
+	res.status(200).json({
+		currentPage: page,
+		totalPages,
+		totalTeachers: teachers.count,
+		teachers: teachers.rows,
+	});
 });
