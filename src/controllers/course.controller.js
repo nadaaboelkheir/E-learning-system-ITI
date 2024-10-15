@@ -618,7 +618,39 @@ exports.getStudentsInCourse = AsyncHandler(async (req, res) => {
 		.status(200)
 		.json({ count: course.students.length, data: course.students });
 });
+exports.deleteSection = AsyncHandler(async (req, res) => {
+	if (req.role !== 'teacher') {
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
 
+	if (!req.teacher.isEmailVerified) {
+		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
+	}
+	const { sectionId } = req.params;
+	const section = await Section.findOne({ where: { id: sectionId } });
+	if (!section) {
+		return res.status(404).json({ message: 'القسم غير موجود' });
+	}
+	await section.destroy();
+	res.status(200).json({ message: 'تم حذف القسم بنجاح' });
+});
+
+exports.deleteLesson = AsyncHandler(async (req, res) => {
+	if (req.role !== 'teacher') {
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
+
+	if (!req.teacher.isEmailVerified) {
+		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
+	}
+	const { lessonId } = req.params;
+	const lesson = await Lesson.findOne({ where: { id: lessonId } });
+	if (!lesson) {
+		return res.status(404).json({ message: 'الدرس غير موجود' });
+	}
+	await lesson.destroy();
+	res.status(200).json({ message: 'تم حذف الدرس بنجاح' });
+});
 // student
 exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const { studentId, courseId, adminId } = req.body;
