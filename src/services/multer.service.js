@@ -2,12 +2,17 @@ const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../configs/cloudinary.config');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
 const storage = new CloudinaryStorage({
 	cloudinary: cloudinary,
 	params: {
 		folder: 'images',
-		public_id: (req, file) => file.originalname.split('.')[0],
+		public_id: (req, file) => {
+			const uniqueId = uuidv4();
+			const fileName = file.originalname.split('.')[0];
+			return `${fileName}-${uniqueId}`;
+		},
 	},
 });
 
