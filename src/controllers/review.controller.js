@@ -1,5 +1,5 @@
 const AsyncHandler = require('express-async-handler');
-const { Student, Course, Review } = require('../models');
+const { Student, Course, Review, Enrollment } = require('../models');
 
 exports.getCourseReviews = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
