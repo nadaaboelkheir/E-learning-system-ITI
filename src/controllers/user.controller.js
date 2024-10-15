@@ -2,7 +2,7 @@ const { Student, Teacher, Admin, Wallet, Level, Course } = require('../models');
 const bcrypt = require('bcryptjs');
 const AsyncHandler = require('express-async-handler');
 const { sendVerificationEmail } = require('../utils/mailer');
-const { deleteImageFromCloudinary } = require('../services/multer.service');
+const { deleteFilesFromCloudinary } = require('../services/multer.service');
 const {
 	setTemporaryData,
 	getTemporaryData,
@@ -96,7 +96,7 @@ exports.updateUserProfile = AsyncHandler(async (req, res) => {
 	}
 	if (req.file) {
 		if (user.picture) {
-			await deleteImageFromCloudinary('images', user.picture);
+			await deleteFilesFromCloudinary('images', user.picture, 'image');
 		}
 		user.picture = req.file.path;
 	}
@@ -141,7 +141,7 @@ exports.deleteUser = AsyncHandler(async (req, res) => {
 		}
 	}
 	if (user.picture) {
-		await deleteImageFromCloudinary('images', user.picture);
+		await deleteFilesFromCloudinary('images', user.picture, 'image');
 	}
 
 	await user.destroy();

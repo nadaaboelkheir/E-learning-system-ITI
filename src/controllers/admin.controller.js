@@ -1,7 +1,7 @@
 const { Level, Student, Teacher, Course } = require('../models');
 const { sendVerificationEmail } = require('../utils/mailer');
 const AsyncHandler = require('express-async-handler');
-const { deleteImageFromCloudinary } = require('../services/multer.service');
+const { deleteFilesFromCloudinary } = require('../services/multer.service');
 
 exports.adminVerifyTeacher = AsyncHandler(async (req, res) => {
 	const { teacherId } = req.params;
@@ -199,7 +199,7 @@ exports.deletePendingCourse = AsyncHandler(async (req, res) => {
 	await sendVerificationEmail(teacherEmail, subject, text);
 
 	if (course.image) {
-		await deleteImageFromCloudinary('images', course.image);
+		await deleteFilesFromCloudinary('images', imageUrl, 'image');
 	}
 
 	await course.destroy();

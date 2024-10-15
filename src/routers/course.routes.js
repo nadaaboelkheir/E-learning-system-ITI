@@ -1,7 +1,7 @@
 const express = require('express');
 const {
 	createCourseWithSections,
-	updateCourse,
+	updateCourseWithSections,
 	deleteCourse,
 	getTeacherCourses,
 	getCourseDetails,
@@ -16,6 +16,7 @@ const {
 	getSectionsForCourse,
 	getSectionsForCourseById,
 	createLesson,
+	updateLesson,
 } = require('../controllers/course.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
@@ -56,11 +57,17 @@ teacherCourseRouter.patch(
 	'/:courseId',
 	uploadSingleImage,
 	protectRoute,
-	updateCourse,
+	updateCourseWithSections,
 );
 teacherCourseRouter.delete('/:courseId', protectRoute, deleteCourse);
 
 teacherCourseRouter.delete('/lesson/:lessonId', protectRoute, deleteLesson);
+teacherCourseRouter.patch(
+	'/lesson/:lessonId',
+	uploadFiles,
+	protectRoute,
+	updateLesson,
+);
 teacherCourseRouter.delete('/section/:sectionId', protectRoute, deleteSection);
 
 const userCourseRouter = express.Router();

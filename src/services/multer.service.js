@@ -108,16 +108,24 @@ exports.uploadFiles = multer({
 //   });
 // };
 
-exports.deleteImageFromCloudinary = async (folder, imageUrl) => {
+exports.deleteFilesFromCloudinary = async (
+	folder,
+	fileUrl,
+	resourceType = 'auto',
+) => {
 	try {
-		const publicId = imageUrl.split('/').pop().split('.')[0];
-		await cloudinary.uploader.destroy(`${folder}/${publicId}`);
+		const publicId = fileUrl.split('/').pop().split('.')[0];
+
+		await cloudinary.uploader.destroy(`${folder}/${publicId}`, {
+			resource_type: resourceType,
+		});
+
 		console.log(
-			`Image with public ID: ${publicId} deleted successfully from Cloudinary.`,
+			`File with public ID: ${publicId} deleted successfully from Cloudinary.`,
 		);
 		return true;
 	} catch (error) {
-		console.error('Error deleting image from Cloudinary:', error);
-		throw new Error('Failed to delete image from Cloudinary');
+		console.error('Error deleting file from Cloudinary:', error);
+		throw new Error('Failed to delete file from Cloudinary');
 	}
 };

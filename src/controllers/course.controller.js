@@ -3,8 +3,6 @@ const {
 	Course,
 	Section,
 	Lesson,
-	Pdf,
-	Video,
 	sequelize,
 	Teacher,
 	Level,
@@ -16,7 +14,7 @@ const {
 	Quiz,
 	QuizAttempt,
 } = require('../models');
-const { deleteImageFromCloudinary } = require('../services/multer.service');
+const { deleteFilesFromCloudinary } = require('../services/multer.service');
 
 exports.createCourseWithSections = AsyncHandler(async (req, res) => {
 	if (!req.file) {
@@ -194,7 +192,6 @@ exports.deleteLesson = AsyncHandler(async (req, res) => {
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
 	}
-
 	if (!req.teacher.isEmailVerified) {
 		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
 	}
@@ -205,14 +202,58 @@ exports.deleteLesson = AsyncHandler(async (req, res) => {
 	}
 	const pdfUrl = lesson.pdfUrl;
 	const videoUrl = lesson.videoUrl;
-
+	if (pdfUrl) {
+		await deleteFilesFromCloudinary('pdfs', pdfUrl, 'pdf');
+	}
+	if (videoUrl) {
+		await deleteFilesFromCloudinary('videos', videoUrl, 'video');
+	}
 	await lesson.destroy();
 	res.status(200).json({ message: 'تم حذف الدرس بنجاح' });
 });
-exports.updateCourse = AsyncHandler(async (req, res) => {
+exports.updateLesson = AsyncHandler(async (req, res) => {
+	if (req.role !== 'teacher') {
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
+
+	if (!req.teacher.isEmailVerified) {
+		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
+	}
+
+	const { lessonId } = req.params;
+	const lesson = await Lesson.findOne({ where: { id: lessonId } });
+
+	if (!lesson) {
+		return res.status(404).json({ message: 'الدرس غير موجود' });
+	}
+
+	const { title, description } = req.body;
+
+	lesson.title = title || lesson.title;
+	lesson.description = description || lesson.description;
+
+	if (req.files?.pdfFile) {
+		if (lesson.pdfUrl) {
+			await deleteFilesFromCloudinary('pdfs', lesson.pdfUrl, 'raw');
+		}
+		lesson.pdfUrl = req.files.pdfFile[0].path;
+	}
+
+	if (req.files?.videoFile) {
+		if (lesson.videoUrl) {
+			await deleteFilesFromCloudinary('videos', lesson.videoUrl, 'video');
+		}
+		lesson.videoUrl = req.files.videoFile[0].path;
+	}
+
+	await lesson.save();
+
+	res.status(200).json({ message: 'تم تحديث الدرس بنجاح' });
+});
+
+exports.updateCourseWithSections = AsyncHandler(async (req, res) => {
 	const courseId = req.params.courseId;
-	const { title, description, levelId, price, discountedPrice, section } =
-		req.body;
+	const { section } = req.body;
 
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
@@ -232,200 +273,51 @@ exports.updateCourse = AsyncHandler(async (req, res) => {
 			return res.status(404).json({ message: 'الدورة غير موجودة' });
 		}
 
-		// Update course details only if new values are provided
-		if (title !== undefined) {
-			course.title = title;
-		}
-		if (description !== undefined) {
-			course.description = description;
-		}
-		if (levelId !== undefined) {
-			course.levelId = levelId;
-		}
-		if (price !== undefined) {
-			course.price = price;
-		}
-		if (discountedPrice !== undefined) {
-			course.discountedPrice = discountedPrice;
-		}
+		// Update course image if provided
 		if (req.file) {
 			if (course.image) {
+				// Delete old image from Cloudinary
 				await deleteImageFromCloudinary('images', course.image);
 			}
-			course.image = req.file.path;
+			course.image = req.file.path; // Update the course image path
 		}
 
-		await course.save({ transaction });
+		if (!Array.isArray(section)) {
+			return res
+				.status(400)
+				.json({ message: 'يجب إضافة الأقسام بشكل صحيح' });
+		}
 
-		// Check if section is an array before iterating
-		if (Array.isArray(section)) {
-			for (const sectionData of section) {
-				let existingSection;
-
-				// Check if we have an existing section to update
-				if (sectionData.id) {
-					existingSection = await Section.findByPk(sectionData.id, {
-						transaction,
-					});
-				}
-
-				// Update existing section or create a new one
+		for (const sectionData of section) {
+			if (sectionData.id) {
+				// Update existing section
+				const existingSection = await Section.findByPk(sectionData.id, {
+					transaction,
+				});
 				if (existingSection) {
 					existingSection.title = sectionData.title;
 					await existingSection.save({ transaction });
-					await handleLessons(
-						sectionData.lessons,
-						existingSection.id,
-						transaction,
-					);
-				} else {
-					const newSection = await Section.create(
-						{
-							title: sectionData.title,
-							courseId: course.id,
-						},
-						{ transaction },
-					);
-					await handleLessons(
-						sectionData.lessons,
-						newSection.id,
-						transaction,
-					);
 				}
+			} else {
+				// Create a new section
+				await Section.create(
+					{
+						title: sectionData.title,
+						courseId: course.id,
+					},
+					{ transaction },
+				);
 			}
-		} else if (section !== undefined) {
-			return res
-				.status(400)
-				.json({ message: 'يجب عليك اضافة الدروس بشكل صحيح' });
 		}
 
+		await course.save({ transaction }); // Save updated course details
 		await transaction.commit();
-
-		res.status(200).json({
-			message: 'تم تحديث الدورة بنجاح',
-		});
+		res.status(200).json({ message: 'تم تحديث الدورة بنجاح' });
 	} catch (error) {
 		await transaction.rollback();
 		res.status(500).json({ error: 'حدث خطأ أثناء تحديث الدورة' });
 	}
 });
-
-// Function to handle lessons associated with sections
-exports.handleLessons = async (lessons, sectionId, transaction) => {
-	if (!Array.isArray(lessons)) return;
-
-	for (const lessonData of lessons) {
-		let existingLesson;
-
-		// Check if we have an existing lesson to update
-		if (lessonData.id) {
-			existingLesson = await Lesson.findByPk(lessonData.id, {
-				transaction,
-			});
-		}
-
-		// Update existing lesson or create a new one
-		if (existingLesson) {
-			existingLesson.title = lessonData.title;
-			existingLesson.description = lessonData.description;
-
-			// Update PDFs and videos for the existing lesson
-			await handleMedia(
-				lessonData.pdfs,
-				'pdf',
-				existingLesson.id,
-				transaction,
-			);
-			await handleMedia(
-				lessonData.videos,
-				'video',
-				existingLesson.id,
-				transaction,
-			);
-
-			await existingLesson.save({ transaction });
-		} else {
-			const newLesson = await Lesson.create(
-				{
-					title: lessonData.title,
-					description: lessonData.description,
-					sectionId,
-				},
-				{ transaction },
-			);
-
-			// Ensure at least one PDF and one video are provided
-			if (!lessonData.pdfs || lessonData.pdfs.length === 0) {
-				throw new Error('يجب اضافة ملف واحد علي الأقل لكل درس');
-			}
-			if (!lessonData.videos || lessonData.videos.length === 0) {
-				throw new Error('يجب اضافة فيديو واحد علي الأقل لكل درس');
-			}
-
-			// Handle PDFs for the newly created lesson
-			await handleMedia(
-				lessonData.pdfs,
-				'pdf',
-				newLesson.id,
-				transaction,
-			);
-
-			// Handle Videos for the newly created lesson
-			await handleMedia(
-				lessonData.videos,
-				'video',
-				newLesson.id,
-				transaction,
-			);
-		}
-	}
-};
-
-// Function to handle media files (PDFs and Videos)
-exports.handleMedia = async (mediaList, mediaType, lessonId, transaction) => {
-	if (!Array.isArray(mediaList)) return;
-
-	for (const mediaData of mediaList) {
-		let existingMedia;
-
-		// Check if we have an existing media item to update
-		if (mediaData.id) {
-			existingMedia =
-				mediaType === 'pdf'
-					? await Pdf.findByPk(mediaData.id, { transaction })
-					: await Video.findByPk(mediaData.id, { transaction });
-		}
-
-		// Update existing media or create a new one
-		if (existingMedia) {
-			existingMedia.title = mediaData.title;
-			existingMedia.description = mediaData.description;
-			existingMedia.url = mediaData.url; // Assuming all media have a URL field
-
-			await existingMedia.save({ transaction });
-		} else {
-			const newMedia =
-				mediaType === 'pdf'
-					? await Pdf.create(
-							{
-								title: mediaData.title,
-								description: mediaData.description,
-								url: mediaData.url,
-								lessonId,
-							},
-							{ transaction },
-						)
-					: await Video.create(
-							{
-								title: mediaData.title,
-								url: mediaData.url,
-								lessonId,
-							},
-							{ transaction },
-						);
-		}
-	}
-};
 
 exports.deleteCourse = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
@@ -449,7 +341,9 @@ exports.deleteCourse = AsyncHandler(async (req, res) => {
 		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 	const imageUrl = course.image;
-	await deleteImageFromCloudinary('images', imageUrl);
+	if (imageUrl) {
+		await deleteFilesFromCloudinary('images', imageUrl, 'image');
+	}
 	await course.destroy();
 	return res.status(200).json({ message: 'تم حذف الدورة بنجاح' });
 });
