@@ -104,12 +104,6 @@ module.exports = (sequelize, DataTypes) => {
 			constraints: false,
 		});
 
-		Student.hasMany(models.Subscription, {
-			foreignKey: 'studentId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-		});
-
 		Student.hasMany(models.Quiz, {
 			foreignKey: 'studentId',
 			onUpdate: 'CASCADE',

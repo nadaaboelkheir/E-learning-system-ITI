@@ -125,6 +125,21 @@ exports.deleteUser = AsyncHandler(async (req, res) => {
 	if (!user) {
 		return res.status(404).json({ message: 'المستخدم غير موجود' });
 	}
+	if (!user.isEmailVerified) {
+		return res.status(401).json({ message: 'الحساب غير مفعل' });
+	}
+	let wallet;
+	if (user.walletId) {
+		wallet = await Wallet.findOne({
+			where: {
+				walletableId: user.id,
+				walletableType: user instanceof Student ? 'Student' : 'Teacher',
+			},
+		});
+		if (wallet) {
+			await wallet.destroy();
+		}
+	}
 	if (user.picture) {
 		await deleteImageFromCloudinary(user.picture);
 	}
