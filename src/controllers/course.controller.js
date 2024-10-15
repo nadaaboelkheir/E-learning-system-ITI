@@ -252,8 +252,9 @@ exports.updateLesson = AsyncHandler(async (req, res) => {
 });
 
 exports.updateCourseWithSections = AsyncHandler(async (req, res) => {
-	const courseId = req.params.courseId;
-	const { section } = req.body;
+	const { courseId } = req.params;
+	const { title, description, levelId, price, discountedPrice, sections } =
+		req.body;
 
 	if (req.role !== 'teacher') {
 		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
@@ -272,25 +273,39 @@ exports.updateCourseWithSections = AsyncHandler(async (req, res) => {
 			await transaction.rollback();
 			return res.status(404).json({ message: 'الدورة غير موجودة' });
 		}
+		if (title !== undefined) {
+			course.title = title;
+		}
+		if (description !== undefined) {
+			course.description = description;
+		}
+		if (levelId !== undefined) {
+			course.levelId = levelId;
+		}
+		if (price !== undefined) {
+			course.price = price;
+		}
+		if (discountedPrice !== undefined) {
+			course.discountedPrice = discountedPrice;
+		}
+		const imageUrl = course.image;
 
-		// Update course image if provided
 		if (req.file) {
-			if (course.image) {
-				// Delete old image from Cloudinary
-				await deleteImageFromCloudinary('images', course.image);
+			if (imageUrl) {
+				await deleteFilesFromCloudinary('images', imageUrl, 'image');
 			}
-			course.image = req.file.path; // Update the course image path
+			course.image = req.file.path;
 		}
 
-		if (!Array.isArray(section)) {
+		if (!Array.isArray(sections)) {
+			await transaction.rollback();
 			return res
 				.status(400)
 				.json({ message: 'يجب إضافة الأقسام بشكل صحيح' });
 		}
 
-		for (const sectionData of section) {
+		for (const sectionData of sections) {
 			if (sectionData.id) {
-				// Update existing section
 				const existingSection = await Section.findByPk(sectionData.id, {
 					transaction,
 				});
@@ -299,7 +314,6 @@ exports.updateCourseWithSections = AsyncHandler(async (req, res) => {
 					await existingSection.save({ transaction });
 				}
 			} else {
-				// Create a new section
 				await Section.create(
 					{
 						title: sectionData.title,
@@ -310,10 +324,12 @@ exports.updateCourseWithSections = AsyncHandler(async (req, res) => {
 			}
 		}
 
-		await course.save({ transaction }); // Save updated course details
+		await course.save({ transaction });
 		await transaction.commit();
 		res.status(200).json({ message: 'تم تحديث الدورة بنجاح' });
 	} catch (error) {
+		// console.error('Error during course update:', error);
+
 		await transaction.rollback();
 		res.status(500).json({ error: 'حدث خطأ أثناء تحديث الدورة' });
 	}
