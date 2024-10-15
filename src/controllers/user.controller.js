@@ -96,7 +96,7 @@ exports.updateUserProfile = AsyncHandler(async (req, res) => {
 	}
 	if (req.file) {
 		if (user.picture) {
-			await deleteImageFromCloudinary(user.picture);
+			await deleteImageFromCloudinary('images', user.picture);
 		}
 		user.picture = req.file.path;
 	}
@@ -141,7 +141,7 @@ exports.deleteUser = AsyncHandler(async (req, res) => {
 		}
 	}
 	if (user.picture) {
-		await deleteImageFromCloudinary(user.picture);
+		await deleteImageFromCloudinary('images', user.picture);
 	}
 
 	await user.destroy();

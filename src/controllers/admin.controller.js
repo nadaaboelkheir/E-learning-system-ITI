@@ -199,7 +199,7 @@ exports.deletePendingCourse = AsyncHandler(async (req, res) => {
 	await sendVerificationEmail(teacherEmail, subject, text);
 
 	if (course.image) {
-		await deleteImageFromCloudinary(course.image);
+		await deleteImageFromCloudinary('images', course.image);
 	}
 
 	await course.destroy();

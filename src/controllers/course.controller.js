@@ -18,7 +18,7 @@ const {
 } = require('../models');
 const { deleteImageFromCloudinary } = require('../services/multer.service');
 
-exports.createFullCourse = AsyncHandler(async (req, res) => {
+exports.createCourseWithSections = AsyncHandler(async (req, res) => {
 	if (!req.file) {
 		return res.status(400).json({ message: 'الرجاء تحميل صورة الدورة' });
 	}
@@ -78,55 +78,16 @@ exports.createFullCourse = AsyncHandler(async (req, res) => {
 					.json({ message: 'يجب إدخال عنوان لكل وحدة' });
 			}
 
-			const section = await Section.create(
+			await Section.create(
 				{ title: sectionData.title, courseId: course.id },
 				{ transaction },
 			);
-
-			for (const lessonData of sectionData.lessons) {
-				if (!lessonData.title || !lessonData.title.trim()) {
-					await transaction.rollback();
-					return res
-						.status(400)
-						.json({ message: 'يجب إدخال عنوان لكل درس' });
-				}
-
-				if (!lessonData.description || !lessonData.description.trim()) {
-					await transaction.rollback();
-					return res
-						.status(400)
-						.json({ message: 'يجب إدخال وصف لكل درس' });
-				}
-
-				if (!lessonData.pdfUrl || !lessonData.pdfUrl.trim()) {
-					await transaction.rollback();
-					return res
-						.status(400)
-						.json({ message: 'يجب ادخال رابط ملف الدرس' });
-				}
-
-				if (!lessonData.videoUrl || !lessonData.videoUrl.trim()) {
-					await transaction.rollback();
-					return res
-						.status(400)
-						.json({ message: 'يجب ادخال رابط فيديو لكل درس' });
-				}
-
-				await Lesson.create(
-					{
-						title: lessonData.title,
-						description: lessonData.description,
-						pdfUrl: lessonData.pdfUrl,
-						videoUrl: lessonData.videoUrl,
-						sectionId: section.id,
-					},
-					{ transaction },
-				);
-			}
 		}
 
 		await transaction.commit();
-		return res.status(201).json({ message: 'تم انشاء الدورة بنجاح' });
+		return res
+			.status(201)
+			.json({ message: 'تم انشاء الدورة مع الوحدات بنجاح' });
 	} catch (error) {
 		await transaction.rollback();
 		return res
@@ -135,6 +96,119 @@ exports.createFullCourse = AsyncHandler(async (req, res) => {
 	}
 });
 
+exports.getSectionsForCourse = AsyncHandler(async (req, res) => {
+	const { courseId } = req.params;
+	const course = await Course.findOne({ where: { id: courseId } });
+	if (!course) {
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
+	}
+	const sections = await Section.findAll({
+		where: { courseId: courseId },
+		include: [
+			{ model: Lesson, attributes: ['id', 'title'], as: 'lessons' },
+		],
+		order: [['createdAt', 'ASC']],
+	});
+
+	return res.status(200).json({ count: sections.length, data: sections });
+});
+exports.getSectionsForCourseById = AsyncHandler(async (req, res) => {
+	const { sectionId } = req.params;
+
+	const section = await Section.findOne({
+		where: { id: sectionId },
+		include: [
+			{ model: Lesson, attributes: ['id', 'title'], as: 'lessons' },
+		],
+		order: [['createdAt', 'ASC']],
+	});
+
+	return res.status(200).json({ data: section });
+});
+exports.deleteSection = AsyncHandler(async (req, res) => {
+	if (req.role !== 'teacher') {
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
+
+	if (!req.teacher.isEmailVerified) {
+		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
+	}
+	const { sectionId } = req.params;
+	const section = await Section.findOne({ where: { id: sectionId } });
+	if (!section) {
+		return res.status(404).json({ message: 'القسم غير موجود' });
+	}
+	await section.destroy();
+	res.status(200).json({ message: 'تم حذف القسم بنجاح' });
+});
+exports.createLesson = AsyncHandler(async (req, res) => {
+	const { title, description } = req.body;
+
+	const { sectionId } = req.params;
+
+	if (req.role !== 'teacher') {
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
+
+	if (!req.teacher.isEmailVerified) {
+		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
+	}
+
+	const teacherId = req.teacher.id;
+
+	const section = await Section.findOne({
+		where: { id: sectionId },
+	});
+
+	if (!section) {
+		return res.status(404).json({ message: 'السكشن غير موجودة' });
+	}
+	const course = await Course.findOne({
+		where: { id: section.courseId, teacherId },
+	});
+
+	if (!course) {
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
+	}
+
+	const lessonData = {
+		title,
+		sectionId,
+		description,
+	};
+
+	if (req.files) {
+		if (req.files.pdfFile) {
+			lessonData.pdfUrl = req.files.pdfFile[0].path;
+		}
+		if (req.files.videoFile) {
+			lessonData.videoUrl = req.files.videoFile[0].path;
+		}
+	}
+
+	const lesson = await Lesson.create(lessonData);
+
+	return res.status(201).json({ data: lesson });
+});
+exports.deleteLesson = AsyncHandler(async (req, res) => {
+	if (req.role !== 'teacher') {
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
+
+	if (!req.teacher.isEmailVerified) {
+		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
+	}
+	const { lessonId } = req.params;
+	const lesson = await Lesson.findOne({ where: { id: lessonId } });
+	if (!lesson) {
+		return res.status(404).json({ message: 'الدرس غير موجود' });
+	}
+	const pdfUrl = lesson.pdfUrl;
+	const videoUrl = lesson.videoUrl;
+
+	await lesson.destroy();
+	res.status(200).json({ message: 'تم حذف الدرس بنجاح' });
+});
 exports.updateCourse = AsyncHandler(async (req, res) => {
 	const courseId = req.params.courseId;
 	const { title, description, levelId, price, discountedPrice, section } =
@@ -176,7 +250,7 @@ exports.updateCourse = AsyncHandler(async (req, res) => {
 		}
 		if (req.file) {
 			if (course.image) {
-				await deleteImageFromCloudinary(course.image);
+				await deleteImageFromCloudinary('images', course.image);
 			}
 			course.image = req.file.path;
 		}
@@ -375,7 +449,7 @@ exports.deleteCourse = AsyncHandler(async (req, res) => {
 		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
 	const imageUrl = course.image;
-	await deleteImageFromCloudinary(imageUrl);
+	await deleteImageFromCloudinary('images', imageUrl);
 	await course.destroy();
 	return res.status(200).json({ message: 'تم حذف الدورة بنجاح' });
 });
@@ -618,42 +692,9 @@ exports.getStudentsInCourse = AsyncHandler(async (req, res) => {
 		.status(200)
 		.json({ count: course.students.length, data: course.students });
 });
-exports.deleteSection = AsyncHandler(async (req, res) => {
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-
-	if (!req.teacher.isEmailVerified) {
-		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
-	}
-	const { sectionId } = req.params;
-	const section = await Section.findOne({ where: { id: sectionId } });
-	if (!section) {
-		return res.status(404).json({ message: 'القسم غير موجود' });
-	}
-	await section.destroy();
-	res.status(200).json({ message: 'تم حذف القسم بنجاح' });
-});
-
-exports.deleteLesson = AsyncHandler(async (req, res) => {
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-
-	if (!req.teacher.isEmailVerified) {
-		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
-	}
-	const { lessonId } = req.params;
-	const lesson = await Lesson.findOne({ where: { id: lessonId } });
-	if (!lesson) {
-		return res.status(404).json({ message: 'الدرس غير موجود' });
-	}
-	await lesson.destroy();
-	res.status(200).json({ message: 'تم حذف الدرس بنجاح' });
-});
 // student
 exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
-	const { studentId, courseId, adminId } = req.body;
+	const { studentId, courseId } = req.body;
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
@@ -691,7 +732,7 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 	const adminShare = course.price * 0.2;
 
 	const teacher = await Teacher.findOne({ where: { id: course.teacherId } });
-	const admin = await Admin.findOne({ where: { id: adminId } });
+	const admin = await Admin.findOne({ where: { email: 'admin@gmail.com' } });
 
 	if (!teacher || !admin) {
 		return res

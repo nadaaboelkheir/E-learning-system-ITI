@@ -123,7 +123,7 @@ exports.takeQuiz = AsyncHandler(async (req, res) => {
 });
 
 exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
-	const { studentId } = req.params;
+	const studentId = req.student.id;
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
@@ -171,27 +171,40 @@ exports.getQuestionsInQuiz = AsyncHandler(async (req, res) => {
 });
 
 exports.getAllQuizzes = AsyncHandler(async (req, res) => {
-	const allQuizzes = await Quiz.findAll({
-		attributes: ['id', 'title', 'createdAt'],
+	const allQuizzes = await QuizAttempt.findAll({
+		attributes: ['id', 'quizId', 'score', 'maxScore'],
 		include: [
-			{
-				model: Course,
-				as: 'course',
-				attributes: ['id', 'title'],
-			},
 			{
 				model: Student,
 				as: 'student',
 				attributes: ['id', 'firstName', 'lastName'],
 			},
 			{
-				model: Teacher,
-				as: 'teacher',
-				attributes: ['id', 'firstName', 'lastName'],
+				model: Quiz,
+				// as: 'quiz',
+				attributes: ['id', 'title'],
+
+				include: [
+					{
+						model: Section,
+						as: 'section',
+						include: [
+							{
+								model: Course,
+								as: 'course',
+								attributes: ['id', 'title'],
+							},
+						],
+					},
+				],
 			},
 		],
 	});
-	return res.status(200).json({ count: allQuizzes.length, data: allQuizzes });
+	if (!allQuizzes) {
+		return res.status(404).json({ message: 'لا توجد اختبارات متاحة' });
+	}
+
+	return res.status(200).json({ data: allQuizzes });
 });
 
 exports.getQuizForSection = AsyncHandler(async (req, res) => {

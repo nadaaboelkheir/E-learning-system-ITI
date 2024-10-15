@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-	createFullCourse,
+	createCourseWithSections,
 	updateCourse,
 	deleteCourse,
 	getTeacherCourses,
@@ -13,20 +13,44 @@ const {
 	getTeacherSections,
 	deleteLesson,
 	deleteSection,
+	getSectionsForCourse,
+	getSectionsForCourseById,
+	createLesson,
 } = require('../controllers/course.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
 const validate = require('../middlewares/validators.mw');
-const { uploadSingleImage } = require('../services/multer.service');
+const {
+	uploadSingleImage,
+	uploadFiles,
+} = require('../services/multer.service');
 const teacherCourseRouter = express.Router();
 
 teacherCourseRouter.post(
-	'/',
+	'/with-sections',
 	uploadSingleImage,
 	courseValidationRules(),
 	validate,
 	protectRoute,
-	createFullCourse,
+	createCourseWithSections,
+);
+
+teacherCourseRouter.get(
+	'/sections/:courseId',
+	protectRoute,
+	getSectionsForCourse,
+);
+teacherCourseRouter.get(
+	'/section/:sectionId',
+	protectRoute,
+	getSectionsForCourseById,
+);
+
+teacherCourseRouter.post(
+	'/section/lesson/:sectionId',
+	uploadFiles,
+	protectRoute,
+	createLesson,
 );
 teacherCourseRouter.patch(
 	'/:courseId',

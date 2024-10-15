@@ -15,7 +15,7 @@ teacherQuizRouter.post('/', protectRoute, createQuiz);
 
 const studentQuizRouter = express.Router();
 studentQuizRouter.post('/take-quiz', takeQuiz);
-studentQuizRouter.get('/quizzes/:studentId', getStudentQuizzes);
+studentQuizRouter.get('/quizzes', protectRoute, getStudentQuizzes);
 studentQuizRouter.get('/questions/:id', getQuestionsInQuiz);
 studentQuizRouter.get('/questions/section/:sectionId', getQuizForSection);
 const adminQuizRouter = express.Router();

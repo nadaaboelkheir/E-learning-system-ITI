@@ -20,16 +20,16 @@ module.exports = (sequelize, DataTypes) => {
 				allowNull: false,
 				references: { model: 'Sections', key: 'id' },
 			},
-			courseId: {
-				type: DataTypes.UUID,
-				allowNull: true,
-				references: { model: 'Courses', key: 'id' },
-			},
-			studentId: {
-				type: DataTypes.UUID,
-				allowNull: true,
-				references: { model: 'Students', key: 'id' },
-			},
+			// courseId: {
+			// 	type: DataTypes.UUID,
+			// 	allowNull: true,
+			// 	references: { model: 'Courses', key: 'id' },
+			// },
+			// studentId: {
+			// 	type: DataTypes.UUID,
+			// 	allowNull: true,
+			// 	references: { model: 'Students', key: 'id' },
+			// },
 			teacherId: {
 				type: DataTypes.UUID,
 				allowNull: true,
@@ -48,19 +48,19 @@ module.exports = (sequelize, DataTypes) => {
 			onDelete: 'CASCADE',
 		});
 
-		Quiz.belongsTo(models.Course, {
-			foreignKey: 'courseId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-			as: 'course',
-		});
+		// Quiz.belongsTo(models.Course, {
+		// 	foreignKey: 'courseId',
+		// 	onUpdate: 'CASCADE',
+		// 	onDelete: 'CASCADE',
+		// 	as: 'course',
+		// });
 
-		Quiz.belongsTo(models.Student, {
-			foreignKey: 'studentId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-			as: 'student',
-		});
+		// Quiz.belongsTo(models.Student, {
+		// 	foreignKey: 'studentId',
+		// 	onUpdate: 'CASCADE',
+		// 	onDelete: 'CASCADE',
+		// 	as: 'student',
+		// });
 
 		Quiz.belongsTo(models.Teacher, {
 			foreignKey: 'teacherId',

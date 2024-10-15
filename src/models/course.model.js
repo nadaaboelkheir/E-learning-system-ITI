@@ -85,12 +85,12 @@ module.exports = (sequelize, DataTypes) => {
 			as: 'students',
 		});
 
-		Course.hasMany(models.Quiz, {
-			foreignKey: 'courseId',
-			onUpdate: 'CASCADE',
-			onDelete: 'CASCADE',
-			as: 'quizzes',
-		});
+		// Course.hasMany(models.Quiz, {
+		// 	foreignKey: 'courseId',
+		// 	onUpdate: 'CASCADE',
+		// 	onDelete: 'CASCADE',
+		// 	as: 'quizzes',
+		// });
 	};
 
 	return Course;

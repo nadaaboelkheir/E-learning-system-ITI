@@ -14,23 +14,53 @@ const createStorage = (folderName) => {
 			return {
 				folder: `${folderName}`,
 				public_id: `${fileName}-${uniqueId}`,
+				resource_type: 'auto',
 			};
 		},
 	});
 };
 
 const fileFilter = (req, file, cb) => {
-	const allowedExtensions = ['.jpg', '.jpeg', '.png'];
 	const fileExtension = path.extname(file.originalname).toLowerCase();
 
-	if (allowedExtensions.includes(fileExtension)) {
-		cb(null, true);
+	// Validate based on field name
+	if (file.fieldname === 'pdfFile') {
+		// Only allow PDF for pdfFile field
+		if (fileExtension === '.pdf') {
+			cb(null, true);
+		} else {
+			cb(
+				new Error(
+					'Invalid file type. Only .pdf is allowed for PDF files',
+				),
+			);
+		}
+	} else if (file.fieldname === 'videoFile') {
+		// Only allow video extensions for videoFile field
+		const allowedVideoExtensions = ['.mp4', '.mov', '.avi', '.mkv'];
+		if (allowedVideoExtensions.includes(fileExtension)) {
+			cb(null, true);
+		} else {
+			cb(
+				new Error(
+					'Invalid file type. Only .mp4, .mov, and .avi are allowed for video files',
+				),
+			);
+		}
+	} else if (file.fieldname === 'imageFile') {
+		// Only allow image extensions for imageFile field
+		const allowedImageExtensions = ['.jpg', '.jpeg', '.png'];
+		if (allowedImageExtensions.includes(fileExtension)) {
+			cb(null, true);
+		} else {
+			cb(
+				new Error(
+					'Invalid file type. Only .jpg, .jpeg, and .png are allowed for image files',
+				),
+			);
+		}
 	} else {
-		cb(
-			new Error(
-				'Invalid file type. Only .jpg, .jpeg, and .png are allowed',
-			),
-		);
+		cb(new Error('Unknown file field'));
 	}
 };
 
@@ -41,6 +71,16 @@ exports.uploadSingleImage = multer({
 		fileSize: 5 * 1024 * 1024,
 	},
 }).single('image');
+exports.uploadFiles = multer({
+	storage: createStorage('lessons'),
+	fileFilter,
+	limits: {
+		fileSize: 1000 * 1024 * 1024,
+	},
+}).fields([
+	{ name: 'pdfFile', maxCount: 1, resource_type: 'raw' },
+	{ name: 'videoFile', maxCount: 1, resource_type: 'video' },
+]);
 
 // const uploadSingleImage = (req, res, next) => {
 //   upload(req, res, (err) => {
@@ -68,10 +108,10 @@ exports.uploadSingleImage = multer({
 //   });
 // };
 
-exports.deleteImageFromCloudinary = async (imageUrl) => {
+exports.deleteImageFromCloudinary = async (folder, imageUrl) => {
 	try {
 		const publicId = imageUrl.split('/').pop().split('.')[0];
-		await cloudinary.uploader.destroy(`images/${publicId}`);
+		await cloudinary.uploader.destroy(`${folder}/${publicId}`);
 		console.log(
 			`Image with public ID: ${publicId} deleted successfully from Cloudinary.`,
 		);
