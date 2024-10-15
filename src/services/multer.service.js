@@ -47,7 +47,7 @@ const fileFilter = (req, file, cb) => {
 				),
 			);
 		}
-	} else if (file.fieldname === 'imageFile') {
+	} else if (file.fieldname === 'image') {
 		// Only allow image extensions for imageFile field
 		const allowedImageExtensions = ['.jpg', '.jpeg', '.png'];
 		if (allowedImageExtensions.includes(fileExtension)) {
