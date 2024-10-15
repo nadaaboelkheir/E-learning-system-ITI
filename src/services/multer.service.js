@@ -4,17 +4,20 @@ const cloudinary = require('../configs/cloudinary.config');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-const storage = new CloudinaryStorage({
-	cloudinary: cloudinary,
-	params: {
-		folder: 'images',
-		public_id: (req, file) => {
+const createStorage = (folderName) => {
+	return new CloudinaryStorage({
+		cloudinary: cloudinary,
+		params: (req, file) => {
 			const uniqueId = uuidv4();
 			const fileName = file.originalname.split('.')[0];
-			return `${fileName}-${uniqueId}`;
+
+			return {
+				folder: `${folderName}`,
+				public_id: `${fileName}-${uniqueId}`,
+			};
 		},
-	},
-});
+	});
+};
 
 const fileFilter = (req, file, cb) => {
 	const allowedExtensions = ['.jpg', '.jpeg', '.png'];
@@ -32,10 +35,10 @@ const fileFilter = (req, file, cb) => {
 };
 
 exports.uploadSingleImage = multer({
-	storage,
+	storage: createStorage('images'),
 	fileFilter,
 	limits: {
-		fileSize: 5 * 1024 * 1024, // 5 MB limit
+		fileSize: 5 * 1024 * 1024,
 	},
 }).single('image');
 
