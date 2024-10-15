@@ -1,22 +1,7 @@
 const { Level, Student, Teacher, Course } = require('../models');
 const { sendVerificationEmail } = require('../utils/mailer');
 const AsyncHandler = require('express-async-handler');
-
-exports.deleteUser = AsyncHandler(async (req, res) => {
-	const { userId } = req.params;
-
-	if (req.role !== 'admin') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-	const student = await Student.findByPk(userId);
-	const teacher = await Teacher.findByPk(userId);
-	const user = student || teacher;
-	if (!user) {
-		return res.status(404).json({ message: 'المستخدم غير موجود' });
-	}
-	await user.destroy();
-	return res.status(200).json({ message: 'تم حذف المستخدم بنجاح' });
-});
+const { deleteImageFromCloudinary } = require('../services/multer.service');
 
 exports.adminVerifyTeacher = AsyncHandler(async (req, res) => {
 	const { teacherId } = req.params;
@@ -212,6 +197,10 @@ exports.deletePendingCourse = AsyncHandler(async (req, res) => {
 	const subject = 'تم حذف دورتك';
 	const text = `عزيزي المعلم،\n\nنأسف لإبلاغك أن دورتك "${course.title}" قد تم حذفها بسبب عدم تحققها. إذا كان لديك أي استفسارات، يرجى الاتصال بالإدارة.\n\nشكرًا لتفهمك.`;
 	await sendVerificationEmail(teacherEmail, subject, text);
+
+	if (course.image) {
+		await deleteImageFromCloudinary(course.image);
+	}
 
 	await course.destroy();
 

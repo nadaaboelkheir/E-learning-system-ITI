@@ -15,18 +15,23 @@ const {
 const { protectRoute } = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
 const validate = require('../middlewares/validators.mw');
-const { upload } = require('../services/multer.service');
+const { uploadSingleImage } = require('../services/multer.service');
 const teacherCourseRouter = express.Router();
 
 teacherCourseRouter.post(
 	'/',
-	upload,
+	uploadSingleImage,
 	courseValidationRules(),
 	validate,
 	protectRoute,
 	createFullCourse,
 );
-teacherCourseRouter.patch('/:courseId', upload, protectRoute, updateCourse);
+teacherCourseRouter.patch(
+	'/:courseId',
+	uploadSingleImage,
+	protectRoute,
+	updateCourse,
+);
 teacherCourseRouter.delete('/:courseId', protectRoute, deleteCourse);
 
 const userCourseRouter = express.Router();

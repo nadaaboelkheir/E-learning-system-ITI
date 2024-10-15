@@ -41,6 +41,8 @@ module.exports = (sequelize, DataTypes) => {
 	Enrollment.associate = function (models) {
 		Enrollment.belongsTo(models.Student, {
 			foreignKey: 'studentId',
+			onDelete: 'CASCADE',
+			onUpdate: 'CASCADE',
 		});
 
 		Enrollment.belongsTo(models.Course, {

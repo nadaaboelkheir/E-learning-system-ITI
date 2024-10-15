@@ -26,7 +26,7 @@ const fileFilter = (req, file, cb) => {
 	}
 };
 
-const upload = multer({
+exports.uploadSingleImage = multer({
 	storage,
 	fileFilter,
 	limits: {
@@ -60,6 +60,16 @@ const upload = multer({
 //   });
 // };
 
-module.exports = {
-	upload,
+exports.deleteImageFromCloudinary = async (imageUrl) => {
+	try {
+		const publicId = imageUrl.split('/').pop().split('.')[0];
+		await cloudinary.uploader.destroy(`images/${publicId}`);
+		console.log(
+			`Image with public ID: ${publicId} deleted successfully from Cloudinary.`,
+		);
+		return true;
+	} catch (error) {
+		console.error('Error deleting image from Cloudinary:', error);
+		throw new Error('Failed to delete image from Cloudinary');
+	}
 };

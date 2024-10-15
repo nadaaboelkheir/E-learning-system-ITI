@@ -16,21 +16,7 @@ const {
 	Quiz,
 	QuizAttempt,
 } = require('../models');
-const cloudinary = require('../configs/cloudinary.config');
-
-const deleteImageFromCloudinary = async (imageUrl) => {
-	try {
-		const publicId = imageUrl.split('/').pop().split('.')[0];
-		await cloudinary.uploader.destroy(`images/${publicId}`);
-		console.log(
-			`Image with public ID: ${publicId} deleted successfully from Cloudinary.`,
-		);
-		return true;
-	} catch (error) {
-		console.error('Error deleting image from Cloudinary:', error);
-		throw new Error('Failed to delete image from Cloudinary');
-	}
-};
+const { deleteImageFromCloudinary } = require('../services/multer.service');
 
 exports.createFullCourse = AsyncHandler(async (req, res) => {
 	if (!req.file) {

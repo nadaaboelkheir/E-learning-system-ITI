@@ -2,6 +2,7 @@ const { Student, Teacher, Admin, Wallet, Level, Course } = require('../models');
 const bcrypt = require('bcryptjs');
 const AsyncHandler = require('express-async-handler');
 const { sendVerificationEmail } = require('../utils/mailer');
+const { deleteImageFromCloudinary } = require('../services/multer.service');
 const {
 	setTemporaryData,
 	getTemporaryData,
@@ -93,15 +94,43 @@ exports.updateUserProfile = AsyncHandler(async (req, res) => {
 	if (!user) {
 		return res.status(404).json({ error: 'هذا المستخدم غير موجود' });
 	}
+	if (req.file) {
+		if (user.picture) {
+			await deleteImageFromCloudinary(user.picture);
+		}
+		user.picture = req.file.path;
+	}
 	if (req.body.password) {
 		const hashedPassword = await bcrypt.hash(req.body.password, 10);
 		req.body.password = hashedPassword;
 	}
-	const updatedUser = await user.update(req.body);
+	const updatedUser = await user.update({
+		...req.body,
+		picture: user.picture,
+	});
 	return res.status(200).json({
 		data: updatedUser,
 		message: 'تم تحديث الملف الشخصي بنجاح',
 	});
+});
+exports.deleteUser = AsyncHandler(async (req, res) => {
+	const { userId } = req.params;
+
+	if (req.role !== 'admin') {
+		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
+	}
+	const student = await Student.findByPk(userId);
+	const teacher = await Teacher.findByPk(userId);
+	const user = student || teacher;
+	if (!user) {
+		return res.status(404).json({ message: 'المستخدم غير موجود' });
+	}
+	if (user.picture) {
+		await deleteImageFromCloudinary(user.picture);
+	}
+
+	await user.destroy();
+	return res.status(200).json({ message: 'تم حذف المستخدم بنجاح' });
 });
 
 exports.getAllUsers = AsyncHandler(async (req, res) => {
@@ -158,10 +187,10 @@ exports.getAllUsers = AsyncHandler(async (req, res) => {
 });
 
 exports.getUserById = AsyncHandler(async (req, res) => {
-	const { id } = req.params;
+	const { userId } = req.params;
 
 	const admin = await Admin.findOne({
-		where: { id },
+		where: { id: userId },
 		include: {
 			model: Wallet,
 			as: 'wallet',
@@ -184,7 +213,7 @@ exports.getUserById = AsyncHandler(async (req, res) => {
 	}
 
 	const teacher = await Teacher.findOne({
-		where: { id },
+		where: { id: userId },
 		include: {
 			model: Wallet,
 			as: 'wallet',
@@ -207,7 +236,7 @@ exports.getUserById = AsyncHandler(async (req, res) => {
 	}
 
 	const student = await Student.findOne({
-		where: { id },
+		where: { id: userId },
 		include: [
 			{
 				model: Wallet,
