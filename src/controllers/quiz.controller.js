@@ -233,7 +233,6 @@ exports.getAllQuizzes = AsyncHandler(async (req, res) => {
 
 exports.getQuizForSection = AsyncHandler(async (req, res) => {
 	const { sectionId } = req.params;
-
 	const quiz = await Quiz.findOne({
 		where: { sectionId: sectionId },
 		include: [
@@ -243,11 +242,25 @@ exports.getQuizForSection = AsyncHandler(async (req, res) => {
 			},
 		],
 	});
-
 	if (!quiz) {
 		return res
 			.status(404)
 			.json({ message: 'لا توجد اختبارات متاحة لهذة الوحدة' });
+	}
+	if (req.role == 'student') {
+		const studentId = req.student.id;
+		const student = await Student.findOne({ where: { id: studentId } });
+		if (!student) {
+			return res.status(404).json({ message: 'الطالب غير موجود' });
+		}
+		const existingAttempt = await QuizAttempt.findOne({
+			where: { studentId, quizId: quiz.id },
+		});
+		if (existingAttempt) {
+			return res
+				.status(403)
+				.json({ message: 'لقد قمت بحل الاختبار من قبل' });
+		}
 	}
 
 	return res.status(200).json(quiz);
