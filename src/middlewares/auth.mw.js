@@ -38,13 +38,11 @@ exports.protectRoute = async (req, res, next) => {
 				}
 				req.student = student;
 
-				// Track device access
 				const deviceInfo = req.headers['user-agent'];
 				const sessions = await UserSessions.findAll({
 					where: { userId: student.id },
 				});
 
-				// Check if the device limit is reached
 				if (sessions.length >= deviceLimit) {
 					return res.status(403).json({
 						message:
@@ -52,10 +50,9 @@ exports.protectRoute = async (req, res, next) => {
 					});
 				}
 
-				// Check how many devices are currently active
 				const activeSessions = sessions.filter(
 					(session) => session.active,
-				); // Assuming you have a way to track active sessions
+				);
 				if (activeSessions.length >= activeDeviceLimit) {
 					return res.status(403).json({
 						message:
@@ -63,7 +60,6 @@ exports.protectRoute = async (req, res, next) => {
 					});
 				}
 
-				// Check if the device is already registered
 				const existingSession = sessions.find(
 					(session) => session.deviceInfo === deviceInfo,
 				);
@@ -92,4 +88,35 @@ exports.protectRoute = async (req, res, next) => {
 	} catch (err) {
 		return res.status(401).json({ error: err.message });
 	}
+};
+
+const authorize = (role, isEmailVerifiedCheck = false) => {
+	return (req, res, next) => {
+		if (req.role !== role) {
+			return res
+				.status(401)
+				.json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
+		}
+
+		if (isEmailVerifiedCheck && !req[role].isEmailVerified) {
+			return res
+				.status(401)
+				.json({ message: 'البريد الالكتروني غير مفعل' });
+		}
+
+		next();
+	};
+};
+
+exports.authorizeTeacher = authorize('teacher', true);
+
+exports.authorizeStudent = authorize('student', true);
+
+exports.authorizeAdmin = authorize('admin');
+
+exports.authorizeTeacherOrAdmin = (req, res, next) => {
+	if (req.role === 'admin') {
+		return next();
+	}
+	return authorize('teacher', true)(req, res, next);
 };

@@ -15,18 +15,62 @@ const {
 	QuizAttempt,
 } = require('../models');
 const { deleteFilesFromCloudinary } = require('../services/multer.service');
+const deleteFiles = async (items) => {
+	const deletePromises = [];
+	for (const item of items) {
+		if (item.videoUrl) {
+			deletePromises.push(
+				deleteFilesFromCloudinary('lessons', item.videoUrl, 'video'),
+			);
+		}
+		if (item.pdfUrl) {
+			deletePromises.push(
+				deleteFilesFromCloudinary('lessons', item.pdfUrl, 'raw'),
+			);
+		}
+	}
+	await Promise.all(deletePromises);
+};
+const validateLevel = async (levelId, transaction) => {
+	const level = await Level.findOne({ where: { id: levelId }, transaction });
+	if (!level) {
+		return { status: 404, message: 'المستوى غير موجود' };
+	}
+	return { status: 200, level };
+};
 
+const createOrUpdateSections = async (sections, courseId, transaction) => {
+	for (const sectionData of sections) {
+		if (!sectionData.title || !sectionData.title.trim()) {
+			return { status: 400, message: 'يجب إدخال عنوان لكل وحدة' };
+		}
+
+		if (sectionData.id) {
+			const existingSection = await Section.findByPk(sectionData.id, {
+				transaction,
+			});
+			if (existingSection) {
+				existingSection.title = sectionData.title;
+				await existingSection.save({ transaction });
+			} else {
+				return { status: 404, message: 'قسم غير موجود' };
+			}
+		} else {
+			await Section.create(
+				{
+					title: sectionData.title,
+					courseId,
+				},
+				{ transaction },
+			);
+		}
+	}
+	return { status: 200, message: 'تمت المعالجة بنجاح' };
+};
+//  course - sections
 exports.createCourseWithSections = AsyncHandler(async (req, res) => {
 	if (!req.file) {
 		return res.status(400).json({ message: 'الرجاء تحميل صورة الدورة' });
-	}
-
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-
-	if (!req.teacher.isEmailVerified) {
-		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
 	}
 
 	const { title, description, levelId, price, discountedPrice, sections } =
@@ -37,10 +81,10 @@ exports.createCourseWithSections = AsyncHandler(async (req, res) => {
 	const transaction = await sequelize.transaction();
 
 	try {
-		const level = await Level.findOne({ where: { id: levelId } });
-		if (!level) {
+		const levelResponse = await validateLevel(levelId, transaction);
+		if (levelResponse.status !== 200) {
 			await transaction.rollback();
-			return res.status(404).json({ message: 'المستوى غير موجود' });
+			return res.status(levelResponse.status).json(levelResponse);
 		}
 
 		const existingCourse = await Course.findOne({
@@ -68,18 +112,14 @@ exports.createCourseWithSections = AsyncHandler(async (req, res) => {
 			return res.status(500).json({ message: 'خطأ في إنشاء الدورة' });
 		}
 
-		for (const sectionData of sections) {
-			if (!sectionData.title || !sectionData.title.trim()) {
-				await transaction.rollback();
-				return res
-					.status(400)
-					.json({ message: 'يجب إدخال عنوان لكل وحدة' });
-			}
-
-			await Section.create(
-				{ title: sectionData.title, courseId: course.id },
-				{ transaction },
-			);
+		const sectionResponse = await createOrUpdateSections(
+			sections,
+			course.id,
+			transaction,
+		);
+		if (sectionResponse.status !== 200) {
+			await transaction.rollback();
+			return res.status(sectionResponse.status).json(sectionResponse);
 		}
 
 		await transaction.commit();
@@ -91,6 +131,211 @@ exports.createCourseWithSections = AsyncHandler(async (req, res) => {
 		return res
 			.status(500)
 			.json({ error: 'خطأ في إنشاء الدورة. الرجاء المحاولة مرة أخرى' });
+	}
+});
+
+exports.updateCourseWithSections = AsyncHandler(async (req, res) => {
+	const { courseId } = req.params;
+	const { title, description, levelId, price, discountedPrice, sections } =
+		req.body;
+
+	const transaction = await sequelize.transaction();
+
+	try {
+		const course = await Course.findOne({
+			where: { id: courseId, teacherId: req.teacher.id },
+			transaction,
+		});
+
+		if (!course) {
+			await transaction.rollback();
+			return res.status(404).json({ message: 'الدورة غير موجودة' });
+		}
+
+		if (title !== undefined) course.title = title;
+		if (description !== undefined) course.description = description;
+		if (levelId !== undefined) course.levelId = levelId;
+		if (price !== undefined) course.price = price;
+		if (discountedPrice !== undefined)
+			course.discountedPrice = discountedPrice;
+
+		const imageUrl = course.image;
+
+		if (req.file) {
+			if (imageUrl) {
+				await deleteFilesFromCloudinary('images', imageUrl, 'image');
+			}
+			course.image = req.file.path;
+		}
+
+		if (!Array.isArray(sections)) {
+			await transaction.rollback();
+			return res
+				.status(400)
+				.json({ message: 'يجب إضافة الأقسام بشكل صحيح' });
+		}
+
+		const sectionResponse = await createOrUpdateSections(
+			sections,
+			course.id,
+			transaction,
+		);
+		if (sectionResponse.status !== 200) {
+			await transaction.rollback();
+			return res.status(sectionResponse.status).json(sectionResponse);
+		}
+
+		await course.save({ transaction });
+		await transaction.commit();
+		return res.status(200).json({ message: 'تم تحديث الدورة بنجاح' });
+	} catch (error) {
+		await transaction.rollback();
+		return res.status(500).json({ error: 'حدث خطأ أثناء تحديث الدورة' });
+	}
+});
+exports.deleteCourse = AsyncHandler(async (req, res) => {
+	const { courseId } = req.params;
+	let course;
+
+	if (req.role === 'teacher') {
+		const teacherId = req.teacher.id;
+		course = await Course.findOne({
+			where: { id: courseId, teacherId },
+			include: {
+				model: Section,
+				as: 'sections',
+				include: {
+					model: Lesson,
+					as: 'lessons',
+				},
+			},
+		});
+	} else {
+		course = await Course.findOne({
+			where: { id: courseId },
+			include: {
+				model: Section,
+				as: 'sections',
+				include: {
+					model: Lesson,
+					as: 'lessons',
+				},
+			},
+		});
+	}
+
+	if (!course) {
+		return res.status(404).json({ message: 'الدورة غير موجودة' });
+	}
+
+	if (course.sections && course.sections.length > 0) {
+		await deleteFiles(
+			course.sections.flatMap((section) => section.lessons),
+		);
+	}
+
+	await Section.destroy({ where: { courseId } });
+
+	if (course.image) {
+		await deleteFilesFromCloudinary('images', course.image, 'image');
+	}
+
+	await course.destroy();
+
+	return res.status(200).json({ message: 'تم حذف الدورة بنجاح' });
+});
+exports.getCourseDetailsById = AsyncHandler(async (req, res) => {
+	const { courseId } = req.params;
+	try {
+		const course = await Course.findOne({
+			where: { id: courseId },
+			include: [
+				{
+					model: Section,
+					as: 'sections',
+					attributes: ['id', 'title', 'createdAt'],
+
+					include: [
+						{
+							model: Lesson,
+							as: 'lessons',
+							attributes: [
+								'id',
+								'title',
+								'videoUrl',
+								'description',
+								'pdfUrl',
+								'createdAt',
+							],
+						},
+					],
+				},
+				{
+					model: Teacher,
+					as: 'teacher',
+					attributes: ['id', 'firstName', 'lastName'],
+				},
+				{
+					model: Level,
+					as: 'level',
+					attributes: ['title'],
+				},
+			],
+		});
+
+		if (!course) {
+			return res.status(404).json({ message: 'الدورة غير موجودة' });
+		}
+
+		const lessonsCount = Array.isArray(course.sections)
+			? course.sections.reduce((count, section) => {
+					return (
+						count +
+						(Array.isArray(section.lessons)
+							? section.lessons.length
+							: 0)
+					);
+				}, 0)
+			: 0;
+
+		const { id: teacherId, firstName, lastName } = course.teacher;
+		const { title: levelTitle } = course.level;
+
+		const sortedSections = course.sections.sort(
+			(a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+		);
+
+		const sectionsWithLessons = sortedSections.map((section) => ({
+			id: section.id,
+			title: section.title,
+			lessons: section.lessons
+				.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+				.map((lesson) => ({
+					id: lesson.id,
+					title: lesson.title,
+					videoUrl: lesson.videoUrl,
+					description: lesson.description,
+					pdfUrl: lesson.pdfUrl,
+				})),
+		}));
+
+		return res.status(200).json({
+			id: course.id,
+			title: course.title,
+			description: course.description,
+			image: course.image,
+			levelId: course.levelId,
+			levelTitle,
+			teacherId,
+			teacherName: `${firstName} ${lastName}`,
+			price: course.price,
+			createdAt: course.createdAt,
+			updatedAt: course.updatedAt,
+			lessonsCount,
+			sections: sectionsWithLessons,
+		});
+	} catch (error) {
+		return res.status(500).json({ error: error.message });
 	}
 });
 
@@ -124,13 +369,6 @@ exports.getSectionsForCourseById = AsyncHandler(async (req, res) => {
 	return res.status(200).json({ data: section });
 });
 exports.deleteSection = AsyncHandler(async (req, res) => {
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-
-	if (!req.teacher.isEmailVerified) {
-		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
-	}
 	const { sectionId } = req.params;
 	const section = await Section.findOne({
 		where: { id: sectionId },
@@ -139,51 +377,27 @@ exports.deleteSection = AsyncHandler(async (req, res) => {
 			as: 'lessons',
 		},
 	});
+
 	if (!section) {
 		return res.status(404).json({ message: 'القسم غير موجود' });
 	}
-	const lessons = section.lessons;
 
-	if (lessons && lessons.length > 0) {
-		const deletePromises = [];
-		for (const lesson of lessons) {
-			if (lesson.pdfUrl) {
-				deletePromises.push(
-					deleteFilesFromCloudinary('lessons', lesson.pdfUrl, 'raw'),
-				);
-			}
-			if (lesson.videoUrl) {
-				deletePromises.push(
-					deleteFilesFromCloudinary(
-						'lessons',
-						lesson.videoUrl,
-						'video',
-					),
-				);
-			}
-		}
-
-		await Promise.all(deletePromises);
-
-		await Lesson.destroy({ where: { sectionId } });
+	if (section.lessons && section.lessons.length > 0) {
+		await deleteFiles(section.lessons);
 	}
+
+	await Lesson.destroy({ where: { sectionId } });
 
 	await section.destroy();
 
 	res.status(200).json({ message: 'تم حذف القسم بنجاح' });
 });
+
+//  lesson
 exports.createLesson = AsyncHandler(async (req, res) => {
 	const { title, description } = req.body;
 
 	const { sectionId } = req.params;
-
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-
-	if (!req.teacher.isEmailVerified) {
-		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
-	}
 
 	const teacherId = req.teacher.id;
 
@@ -222,45 +436,20 @@ exports.createLesson = AsyncHandler(async (req, res) => {
 	return res.status(201).json({ data: lesson });
 });
 exports.deleteLesson = AsyncHandler(async (req, res) => {
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-	if (!req.teacher.isEmailVerified) {
-		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
-	}
 	const { lessonId } = req.params;
 	const lesson = await Lesson.findOne({ where: { id: lessonId } });
+
 	if (!lesson) {
 		return res.status(404).json({ message: 'الدرس غير موجود' });
 	}
-	const pdfUrl = lesson.pdfUrl;
-	const videoUrl = lesson.videoUrl;
-	const deletePromises = [];
-	if (pdfUrl) {
-		deletePromises.push(
-			deleteFilesFromCloudinary('lessons', pdfUrl, 'raw'),
-		);
-	}
-	if (videoUrl) {
-		deletePromises.push(
-			deleteFilesFromCloudinary('lessons', videoUrl, 'video'),
-		);
-	}
 
-	await Promise.all(deletePromises);
+	await deleteFiles([lesson]);
 
 	await lesson.destroy();
+
 	res.status(200).json({ message: 'تم حذف الدرس بنجاح' });
 });
 exports.updateLesson = AsyncHandler(async (req, res) => {
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-
-	if (!req.teacher.isEmailVerified) {
-		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
-	}
-
 	const { lessonId } = req.params;
 	const lesson = await Lesson.findOne({ where: { id: lessonId } });
 
@@ -292,175 +481,8 @@ exports.updateLesson = AsyncHandler(async (req, res) => {
 	res.status(200).json({ message: 'تم تحديث الدرس بنجاح' });
 });
 
-exports.updateCourseWithSections = AsyncHandler(async (req, res) => {
-	const { courseId } = req.params;
-	const { title, description, levelId, price, discountedPrice, sections } =
-		req.body;
-
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-
-	const teacherId = req.teacher.id;
-	const transaction = await sequelize.transaction();
-
-	try {
-		const course = await Course.findOne({
-			where: { id: courseId, teacherId },
-			transaction,
-		});
-
-		if (!course) {
-			await transaction.rollback();
-			return res.status(404).json({ message: 'الدورة غير موجودة' });
-		}
-		if (title !== undefined) {
-			course.title = title;
-		}
-		if (description !== undefined) {
-			course.description = description;
-		}
-		if (levelId !== undefined) {
-			course.levelId = levelId;
-		}
-		if (price !== undefined) {
-			course.price = price;
-		}
-		if (discountedPrice !== undefined) {
-			course.discountedPrice = discountedPrice;
-		}
-		const imageUrl = course.image;
-
-		if (req.file) {
-			if (imageUrl) {
-				await deleteFilesFromCloudinary('images', imageUrl, 'image');
-			}
-			course.image = req.file.path;
-		}
-
-		if (!Array.isArray(sections)) {
-			await transaction.rollback();
-			return res
-				.status(400)
-				.json({ message: 'يجب إضافة الأقسام بشكل صحيح' });
-		}
-
-		for (const sectionData of sections) {
-			if (sectionData.id) {
-				const existingSection = await Section.findByPk(sectionData.id, {
-					transaction,
-				});
-				if (existingSection) {
-					existingSection.title = sectionData.title;
-					await existingSection.save({ transaction });
-				}
-			} else {
-				await Section.create(
-					{
-						title: sectionData.title,
-						courseId: course.id,
-					},
-					{ transaction },
-				);
-			}
-		}
-
-		await course.save({ transaction });
-		await transaction.commit();
-		res.status(200).json({ message: 'تم تحديث الدورة بنجاح' });
-	} catch (error) {
-		// console.error('Error during course update:', error);
-
-		await transaction.rollback();
-		res.status(500).json({ error: 'حدث خطأ أثناء تحديث الدورة' });
-	}
-});
-
-exports.deleteCourse = AsyncHandler(async (req, res) => {
-	const { courseId } = req.params;
-
-	if (req.role !== 'teacher' && req.role !== 'admin') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-
-	let course;
-	if (req.role === 'teacher') {
-		const teacherId = req.teacher.id;
-		course = await Course.findOne({
-			where: { id: courseId, teacherId },
-			include: {
-				model: Section,
-				as: 'sections',
-				include: {
-					model: Lesson,
-					as: 'lessons',
-				},
-			},
-		});
-	} else {
-		course = await Course.findOne({
-			where: { id: courseId },
-			include: {
-				model: Section,
-				as: 'sections',
-				include: {
-					model: Lesson,
-					as: 'lessons',
-				},
-			},
-		});
-	}
-
-	if (!course) {
-		return res.status(404).json({ message: 'الدورة غير موجودة' });
-	}
-
-	const sections = course.sections;
-	const deletePromises = [];
-
-	if (sections && sections.length > 0) {
-		for (const section of sections) {
-			const lessons = section.lessons;
-
-			if (lessons && lessons.length > 0) {
-				for (const lesson of lessons) {
-					if (lesson.videoUrl) {
-						deletePromises.push(
-							deleteFilesFromCloudinary(
-								'lessons',
-								lesson.videoUrl,
-								'video',
-							),
-						);
-					}
-					if (lesson.pdfUrl) {
-						deletePromises.push(
-							deleteFilesFromCloudinary(
-								'lessons',
-								lesson.pdfUrl,
-								'raw',
-							),
-						);
-					}
-				}
-			}
-		}
-	}
-
-	await Promise.all(deletePromises);
-
-	await Section.destroy({ where: { courseId } });
-
-	if (course.image) {
-		await deleteFilesFromCloudinary('images', course.image, 'image');
-	}
-	await course.destroy();
-
-	return res.status(200).json({ message: 'تم حذف الدورة بنجاح' });
-});
-
 exports.getTeacherCourses = AsyncHandler(async (req, res) => {
-	const teacherId = req.params.teacherId || req.teacher.id;
+	const teacherId = req.params.teacherId;
 
 	const teacher = await Teacher.findOne({
 		where: { id: teacherId },
@@ -565,101 +587,6 @@ exports.getTeacherSections = AsyncHandler(async (req, res) => {
 	return res.status(200).json({ count: sections.length, data: sections });
 });
 
-exports.getCourseDetails = AsyncHandler(async (req, res) => {
-	const { courseId } = req.params;
-	try {
-		const course = await Course.findOne({
-			where: { id: courseId },
-			include: [
-				{
-					model: Section,
-					as: 'sections',
-					attributes: ['id', 'title', 'createdAt'],
-
-					include: [
-						{
-							model: Lesson,
-							as: 'lessons',
-							attributes: [
-								'id',
-								'title',
-								'videoUrl',
-								'description',
-								'pdfUrl',
-								'createdAt',
-							],
-						},
-					],
-				},
-				{
-					model: Teacher,
-					as: 'teacher',
-					attributes: ['id', 'firstName', 'lastName'],
-				},
-				{
-					model: Level,
-					as: 'level',
-					attributes: ['title'],
-				},
-			],
-		});
-
-		if (!course) {
-			return res.status(404).json({ message: 'الدورة غير موجودة' });
-		}
-
-		const lessonsCount = Array.isArray(course.sections)
-			? course.sections.reduce((count, section) => {
-					return (
-						count +
-						(Array.isArray(section.lessons)
-							? section.lessons.length
-							: 0)
-					);
-				}, 0)
-			: 0;
-
-		const { id: teacherId, firstName, lastName } = course.teacher;
-		const { title: levelTitle } = course.level;
-
-		const sortedSections = course.sections.sort(
-			(a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-		);
-
-		const sectionsWithLessons = sortedSections.map((section) => ({
-			id: section.id,
-			title: section.title,
-			lessons: section.lessons
-				.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-				.map((lesson) => ({
-					id: lesson.id,
-					title: lesson.title,
-					videoUrl: lesson.videoUrl,
-					description: lesson.description,
-					pdfUrl: lesson.pdfUrl,
-				})),
-		}));
-
-		return res.status(200).json({
-			id: course.id,
-			title: course.title,
-			description: course.description,
-			image: course.image,
-			levelId: course.levelId,
-			levelTitle,
-			teacherId,
-			teacherName: `${firstName} ${lastName}`,
-			price: course.price,
-			createdAt: course.createdAt,
-			updatedAt: course.updatedAt,
-			lessonsCount,
-			sections: sectionsWithLessons,
-		});
-	} catch (error) {
-		return res.status(500).json({ error: error.message });
-	}
-});
-
 exports.getAllCourses = AsyncHandler(async (req, res) => {
 	const courses = await Course.findAll({
 		where: {
@@ -699,8 +626,10 @@ exports.getAllCourses = AsyncHandler(async (req, res) => {
 		.json({ count: formattedCourses.length, data: formattedCourses });
 });
 
+//  teacher or student
 exports.getStudentsInCourse = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
+
 	const course = await Course.findOne({
 		where: { id: courseId },
 		include: [
@@ -709,26 +638,33 @@ exports.getStudentsInCourse = AsyncHandler(async (req, res) => {
 				as: 'students',
 				attributes: ['id', 'firstName', 'lastName'],
 				through: {
+					model: Enrollment,
 					attributes: [],
 				},
 			},
 		],
 	});
+
 	if (!course) {
 		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
-	return res
-		.status(200)
-		.json({ count: course.students.length, data: course.students });
+
+	if (course.students.length === 0) {
+		return res.status(404).json({ message: 'لا يوجد طلاب في هذه الدورة' });
+	}
+
+	return res.status(200).json({
+		count: course.students.length,
+		data: course.students,
+	});
 });
+
 // student
 exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
-	const { studentId, courseId } = req.body;
+	const { courseId } = req.body;
 
-	const student = await Student.findOne({ where: { id: studentId } });
-	if (!student) {
-		return res.status(404).json({ message: 'الطالب غير موجود' });
-	}
+	const studentId = req.student.id;
+
 	const existingEnrollment = await Enrollment.findOne({
 		where: { studentId, courseId },
 	});
@@ -811,13 +747,7 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 });
 
 exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
-	const studentId = req.params.studentId || req.student.id;
-
-	const student = await Student.findOne({ where: { id: studentId } });
-	if (!student) {
-		return res.status(404).json({ message: 'هذا الطالب غير موجود' });
-	}
-
+	const studentId = req.student.id;
 	const enrollments = await Enrollment.findAll({
 		where: { studentId },
 		include: [
@@ -844,8 +774,9 @@ exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
 });
 
 exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
-	const { courseId, studentId } = req.params;
+	const { courseId } = req.params;
 
+	const studentId = req.student.id;
 	const enrollment = await Enrollment.findOne({
 		where: {
 			studentId: studentId,
@@ -870,23 +801,20 @@ exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
 	}
 
 	let totalGrade = 0;
-	let allQuizzesCompleted = true;
 
-	for (const quiz of quizzes) {
-		const studentQuiz = await QuizAttempt.findOne({
-			where: { quizId: quiz.id, studentId: studentId },
-		});
+	const quizAttempts = await QuizAttempt.findAll({
+		where: {
+			studentId: studentId,
+			quizId: quizzes.map((quiz) => quiz.id),
+		},
+	});
 
-		if (!studentQuiz) {
-			allQuizzesCompleted = false;
-			break;
-		}
-
-		totalGrade += studentQuiz.score;
+	if (quizAttempts.length !== quizzes.length) {
+		return res.status(400).json({ message: 'لم تكمل جميع الاختبارات بعد' });
 	}
 
-	if (!allQuizzesCompleted) {
-		return res.status(400).json({ message: 'لم تكمل جميع الاختبارات بعد' });
+	for (const attempt of quizAttempts) {
+		totalGrade += attempt.score;
 	}
 
 	return res.status(200).json({

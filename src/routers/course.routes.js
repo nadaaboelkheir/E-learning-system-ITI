@@ -4,7 +4,7 @@ const {
 	updateCourseWithSections,
 	deleteCourse,
 	getTeacherCourses,
-	getCourseDetails,
+	getCourseDetailsById,
 	getAllCourses,
 	getStudentsInCourse,
 	buyCourseWithWallet,
@@ -18,7 +18,12 @@ const {
 	createLesson,
 	updateLesson,
 } = require('../controllers/course.controller');
-const { protectRoute } = require('../middlewares/auth.mw');
+const {
+	protectRoute,
+	authorizeStudent,
+	authorizeTeacher,
+	authorizeTeacherOrAdmin,
+} = require('../middlewares/auth.mw');
 const courseValidationRules = require('../validations/course.vc');
 const validate = require('../middlewares/validators.mw');
 const {
@@ -33,6 +38,7 @@ teacherCourseRouter.post(
 	courseValidationRules(),
 	validate,
 	protectRoute,
+	authorizeTeacher,
 	createCourseWithSections,
 );
 
@@ -41,51 +47,86 @@ teacherCourseRouter.get(
 	protectRoute,
 	getSectionsForCourse,
 );
+teacherCourseRouter.patch(
+	'/:courseId',
+	uploadSingleImage,
+	protectRoute,
+	authorizeTeacher,
+	updateCourseWithSections,
+);
+teacherCourseRouter.delete(
+	'/:courseId',
+	protectRoute,
+	authorizeTeacherOrAdmin,
+	deleteCourse,
+);
 teacherCourseRouter.get(
 	'/section/:sectionId',
 	protectRoute,
 	getSectionsForCourseById,
 );
 
+teacherCourseRouter.delete(
+	'/section/:sectionId',
+	protectRoute,
+	authorizeTeacher,
+	deleteSection,
+);
 teacherCourseRouter.post(
 	'/section/lesson/:sectionId',
 	uploadFiles,
 	protectRoute,
+	authorizeTeacher,
 	createLesson,
 );
-teacherCourseRouter.patch(
-	'/:courseId',
-	uploadSingleImage,
-	protectRoute,
-	updateCourseWithSections,
-);
-teacherCourseRouter.delete('/:courseId', protectRoute, deleteCourse);
 
-teacherCourseRouter.delete('/lesson/:lessonId', protectRoute, deleteLesson);
+teacherCourseRouter.delete(
+	'/lesson/:lessonId',
+	protectRoute,
+	authorizeTeacher,
+	deleteLesson,
+);
 teacherCourseRouter.patch(
 	'/lesson/:lessonId',
 	uploadFiles,
 	protectRoute,
+	authorizeTeacher,
 	updateLesson,
 );
-teacherCourseRouter.delete('/section/:sectionId', protectRoute, deleteSection);
 
 const userCourseRouter = express.Router();
 userCourseRouter.get('/teacher-courses/:teacherId', getTeacherCourses);
 userCourseRouter.get('/teacher-sections', protectRoute, getTeacherSections);
-userCourseRouter.get('/teacher/courses', protectRoute, getTeacherCourses);
-userCourseRouter.get('/details/:courseId', getCourseDetails);
+// userCourseRouter.get('/teacher/courses/:teacherId', protectRoute, authorizeTeacher, getTeacherCourses);
+userCourseRouter.get('/details/:courseId', getCourseDetailsById);
 userCourseRouter.get('/all-courses', getAllCourses);
+
+// admin
 const adminCourseRouter = express.Router();
-adminCourseRouter.get('/students-in-course/:courseId', getStudentsInCourse);
+adminCourseRouter.get(
+	'/students-in-course/:courseId',
+	protectRoute,
+	authorizeTeacherOrAdmin,
+	getStudentsInCourse,
+);
 
 // student
 const studentCoursesRouter = express.Router();
 studentCoursesRouter
-	.post('/buy-course', buyCourseWithWallet)
-	.get('/enrolled-courses/:studentId', getStudentEnrolledCourses)
-	.get('/enrolled/courses', protectRoute, getStudentEnrolledCourses)
-	.get('/certificate/:studentId/:courseId', getCertificateForCourse);
+	.post('/buy-course', protectRoute, authorizeStudent, buyCourseWithWallet)
+	.get(
+		'/enrolled/courses',
+		protectRoute,
+		authorizeStudent,
+		getStudentEnrolledCourses,
+	)
+	.get(
+		'/certificate/:courseId',
+		protectRoute,
+		authorizeStudent,
+		getCertificateForCourse,
+	);
+
 module.exports = {
 	studentCoursesRouter,
 	userCourseRouter,
