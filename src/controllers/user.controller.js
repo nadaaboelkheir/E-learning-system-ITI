@@ -72,36 +72,6 @@ exports.getCurrentUser = AsyncHandler(async (req, res) => {
 		}
 
 		if (user.role === 'teacher') {
-			const courses = await Course.findAll({
-				where: { teacherId: user.id },
-				attributes: ['id'],
-			});
-
-			let totalRating = 0;
-			let totalReviews = 0;
-
-			// Calculate the teacher's rating from all course reviews
-			for (const course of courses) {
-				const reviews = await Review.findAll({
-					where: { courseId: course.id },
-					attributes: ['rate'],
-				});
-
-				if (reviews.length > 0) {
-					const courseTotalRating = reviews.reduce(
-						(sum, review) => sum + review.rate,
-						0,
-					);
-					totalRating += courseTotalRating;
-					totalReviews += reviews.length;
-				}
-			}
-
-			const teacherRating =
-				totalReviews > 0
-					? (totalRating / totalReviews).toFixed(2)
-					: 'No ratings yet';
-
 			return {
 				...baseData,
 				firstName: user.firstName,
@@ -110,7 +80,6 @@ exports.getCurrentUser = AsyncHandler(async (req, res) => {
 				specialization: user.specialization,
 				graduationYear: user.graduationYear,
 				educationalQualification: user.educationalQualification,
-				teacherRating,
 			};
 		}
 

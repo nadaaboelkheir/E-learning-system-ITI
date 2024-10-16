@@ -96,3 +96,51 @@ exports.getReviewsMadeByStudent = AsyncHandler(async (req, res) => {
 		data: reviews,
 	});
 });
+
+exports.getTeacherRatingFromCourses = AsyncHandler(async (req, res) => {
+	const { teacherId } = req.params;
+
+	const courses = await Course.findAll({
+		where: { teacherId },
+		attributes: ['id'],
+	});
+
+	if (!courses || courses.length === 0) {
+		return res.status(404).json({ message: 'لا يوجد دورات لهذا المدرس' });
+	}
+
+	let totalRating = 0;
+	let totalReviews = 0;
+
+	for (const course of courses) {
+		const reviews = await Review.findAll({
+			where: { courseId: course.id },
+			attributes: ['rate'],
+		});
+
+		if (reviews.length > 0) {
+			const courseTotalRating = reviews.reduce(
+				(sum, review) => sum + review.rate,
+				0,
+			);
+			const courseAverageRating = courseTotalRating / reviews.length;
+
+			totalRating += courseAverageRating;
+			totalReviews += 1;
+		}
+	}
+
+	if (totalReviews === 0) {
+		return res.status(404).json({
+			message: 'لا يوجد تقييمات لهذا المدرس في جميع الدورات',
+		});
+	}
+
+	const teacherRating = totalRating / totalReviews;
+
+	res.status(200).json({
+		teacherId,
+		teacherRating: teacherRating.toFixed(2),
+		totalCourses: totalReviews,
+	});
+});

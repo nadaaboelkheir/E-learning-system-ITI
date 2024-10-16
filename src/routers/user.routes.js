@@ -15,12 +15,14 @@ const { userCourseRouter } = require('./course.routes');
 const { userEventRouter } = require('./event.routes');
 const { userLevelRouter } = require('./level.routes');
 const { uploadSingleImage } = require('../services/multer.service');
+const { userReviewsRouter } = require('./review.routes');
 const router = express.Router();
 // User routes
 router.use('/auth', userAuthRouter);
 router.use('/courses', userCourseRouter);
 router.use('/events', userEventRouter);
 router.use('/levels', userLevelRouter);
+router.use('/review', userReviewsRouter);
 router.get('/current', protectRoute, getCurrentUser);
 router.get('/:userId', getUserById);
 router.get('/', getAllUsers);

@@ -34,5 +34,11 @@ studentReviewsRouter.get(
 	authorizeStudent,
 	getReviewsMadeByStudent,
 );
+const userReviewsRouter = express.Router();
 
-module.exports = { studentReviewsRouter };
+userReviewsRouter.get(
+	'/teacher-rating/:teacherId',
+	getTeacherRatingFromCourses,
+);
+
+module.exports = { studentReviewsRouter, userReviewsRouter };
