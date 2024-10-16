@@ -707,6 +707,11 @@ exports.buyCourseWithWallet = AsyncHandler(async (req, res) => {
 
 	const studentId = req.student.id;
 
+	const student = await Student.findOne({ where: { id: studentId } });
+	if (!student) {
+		return res.status(404).json({ message: 'الطالب غير موجود' });
+	}
+
 	const existingEnrollment = await Enrollment.findOne({
 		where: { studentId, courseId },
 	});
