@@ -440,6 +440,9 @@ exports.createLesson = AsyncHandler(async (req, res) => {
 	if (!course) {
 		return res.status(404).json({ message: 'الدورة غير موجودة' });
 	}
+	if (course.courseVerify === false) {
+		return res.status(404).json({ message: 'الدورة غير متاحة' });
+	}
 
 	const lessonData = {
 		title,

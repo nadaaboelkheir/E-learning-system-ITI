@@ -13,9 +13,7 @@ const AsyncHandler = require('express-async-handler');
 
 exports.createQuiz = AsyncHandler(async (req, res) => {
 	const { title, Duration, sectionId, questions } = req.body;
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
+
 	const teacherId = req.teacher.id;
 	const transaction = await sequelize.transaction();
 
@@ -57,7 +55,9 @@ exports.createQuiz = AsyncHandler(async (req, res) => {
 
 // student
 exports.takeQuiz = AsyncHandler(async (req, res) => {
-	const { studentId, courseId, quizId, answers } = req.body;
+	const { courseId, quizId, answers } = req.body;
+
+	const studentId = req.student.id;
 
 	const student = await Student.findOne({ where: { id: studentId } });
 	if (!student) {
