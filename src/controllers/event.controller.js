@@ -3,10 +3,6 @@ const AsyncHandler = require('express-async-handler');
 
 exports.createEvent = AsyncHandler(async (req, res) => {
 	const { title, description, start, end } = req.body;
-
-	if (req.role !== 'admin') {
-		return res.status(401).json({ error: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
 	const event = await Event.create({
 		title,
 		description,
