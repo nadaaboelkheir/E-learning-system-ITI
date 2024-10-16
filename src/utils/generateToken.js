@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { Admin, Student, Teacher } = require('../models');
 const { JWT_SECRET, JWT_REFRESH_SECRET, NODE_ENV } = require('../utils/env');
-const ACCESS_TOKEN_EXPIRATION = '1d';
+const ACCESS_TOKEN_EXPIRATION = '1m';
 const REFRESH_TOKEN_EXPIRATION = '7d';
 
 exports.generateTokenAndSetCookie = async (userId, role, res) => {
@@ -29,7 +29,7 @@ exports.generateTokenAndSetCookie = async (userId, role, res) => {
 			httpOnly: true,
 			secure: NODE_ENV !== 'development',
 			sameSite: 'strict',
-			maxAge: 60 * 60 * 1000,
+			maxAge: 1 * 60 * 1000,
 		});
 
 		res.cookie('refresh-token', refreshToken, {
@@ -78,7 +78,7 @@ exports.refreshAccessToken = async (req, res) => {
 			httpOnly: true,
 			secure: NODE_ENV !== 'development',
 			sameSite: 'strict',
-			maxAge: 60 * 60 * 1000,
+			maxAge: 1 * 60 * 1000,
 		});
 
 		res.status(200).json({

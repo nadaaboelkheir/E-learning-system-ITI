@@ -121,7 +121,7 @@ exports.verifyOtp = AsyncHandler(async (req, res) => {
 
 exports.resendOtp = AsyncHandler(async (req, res) => {
 	const { email } = req.session;
-
+	console.log('Current Session:', req.session);
 	if (!email) {
 		return res.status(400).json({
 			message: 'برجاء التحقق من بريدك الالكتروني لاكمال التسجيل',

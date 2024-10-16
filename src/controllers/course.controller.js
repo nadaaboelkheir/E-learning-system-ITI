@@ -526,6 +526,11 @@ exports.getTeacherCourses = AsyncHandler(async (req, res) => {
 		order: [['createdAt', 'DESC']],
 		include: [
 			{
+				model: Teacher,
+				as: 'teacher',
+				attributes: ['id', 'firstName', 'lastName'],
+			},
+			{
 				model: Section,
 				as: 'sections',
 				include: [
