@@ -9,7 +9,7 @@ const {
 } = require('../models');
 const bcrypt = require('bcryptjs');
 const AsyncHandler = require('express-async-handler');
-const { sendVerificationEmail } = require('../utils/mailer');
+const { sendVerificationEmailToStudent } = require('../utils/mailer');
 const { deleteFilesFromCloudinary } = require('../services/multer.service');
 const {
 	setTemporaryData,
@@ -354,7 +354,7 @@ exports.forgetPassword = AsyncHandler(async (req, res) => {
 	setTemporaryData(token, email);
 	const resetLink = `http://yourapp.com/reset-password?token=${token}`;
 
-	await sendVerificationEmail(
+	await sendVerificationEmailToStudent(
 		email,
 		'Password Reset Request',
 		`You requested a password reset. Click the link to reset your password: ${resetLink}`,
@@ -364,7 +364,6 @@ exports.forgetPassword = AsyncHandler(async (req, res) => {
 		message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
 	});
 });
-
 exports.resetPasswordToken = AsyncHandler(async (req, res) => {
 	const { token } = req.query;
 	const { newPassword } = req.body;
