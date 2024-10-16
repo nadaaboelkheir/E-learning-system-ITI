@@ -15,7 +15,6 @@ const { userCourseRouter } = require('./course.routes');
 const { userEventRouter } = require('./event.routes');
 const { userLevelRouter } = require('./level.routes');
 const { uploadSingleImage } = require('../services/multer.service');
-
 const router = express.Router();
 // User routes
 router.use('/auth', userAuthRouter);

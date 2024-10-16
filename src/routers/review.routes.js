@@ -1,20 +1,38 @@
 const express = require('express');
 const {
-	getCourseReviews,
-	getCourseRating,
 	getTeacherRatingFromCourses,
 	reviewEnrolledCourseByStudent,
+	deleteReview,
+	updateReview,
 	getReviewsMadeByStudent,
 } = require('../controllers/review.controller');
-const { protectRoute } = require('../middlewares/auth.mw');
+const { protectRoute, authorizeStudent } = require('../middlewares/auth.mw');
 
-const router = express.Router();
+const studentReviewsRouter = express.Router();
 
-router.get('/course-rating/:courseId', getCourseRating);
-router.get('/teacher-rating/:teacherId', getTeacherRatingFromCourses);
-router.get('/teacher/rating', protectRoute, getTeacherRatingFromCourses);
-router.get('/course/:courseId', getCourseReviews);
-router.post('/', reviewEnrolledCourseByStudent);
-router.get('/:studentId', getReviewsMadeByStudent);
+studentReviewsRouter.post(
+	'/',
+	protectRoute,
+	authorizeStudent,
+	reviewEnrolledCourseByStudent,
+);
+studentReviewsRouter.delete(
+	'/:reviewId',
+	protectRoute,
+	authorizeStudent,
+	deleteReview,
+);
+studentReviewsRouter.patch(
+	'/:reviewId',
+	protectRoute,
+	authorizeStudent,
+	updateReview,
+);
+studentReviewsRouter.get(
+	'/:studentId',
+	protectRoute,
+	authorizeStudent,
+	getReviewsMadeByStudent,
+);
 
-module.exports = router;
+module.exports = { studentReviewsRouter };

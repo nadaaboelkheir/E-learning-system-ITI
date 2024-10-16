@@ -1,4 +1,12 @@
-const { Student, Teacher, Admin, Wallet, Level, Course } = require('../models');
+const {
+	Student,
+	Teacher,
+	Admin,
+	Wallet,
+	Level,
+	Course,
+	Review,
+} = require('../models');
 const bcrypt = require('bcryptjs');
 const AsyncHandler = require('express-async-handler');
 const { sendVerificationEmail } = require('../utils/mailer');
@@ -40,7 +48,7 @@ exports.getCurrentUser = AsyncHandler(async (req, res) => {
 	}
 
 	// Helper function to build response data based on the user role
-	const buildResponse = (user) => {
+	const buildResponse = async (user) => {
 		let baseData = {
 			id: user.id,
 			email: user.email,
@@ -64,6 +72,36 @@ exports.getCurrentUser = AsyncHandler(async (req, res) => {
 		}
 
 		if (user.role === 'teacher') {
+			const courses = await Course.findAll({
+				where: { teacherId: user.id },
+				attributes: ['id'],
+			});
+
+			let totalRating = 0;
+			let totalReviews = 0;
+
+			// Calculate the teacher's rating from all course reviews
+			for (const course of courses) {
+				const reviews = await Review.findAll({
+					where: { courseId: course.id },
+					attributes: ['rate'],
+				});
+
+				if (reviews.length > 0) {
+					const courseTotalRating = reviews.reduce(
+						(sum, review) => sum + review.rate,
+						0,
+					);
+					totalRating += courseTotalRating;
+					totalReviews += reviews.length;
+				}
+			}
+
+			const teacherRating =
+				totalReviews > 0
+					? (totalRating / totalReviews).toFixed(2)
+					: 'No ratings yet';
+
 			return {
 				...baseData,
 				firstName: user.firstName,
@@ -72,6 +110,7 @@ exports.getCurrentUser = AsyncHandler(async (req, res) => {
 				specialization: user.specialization,
 				graduationYear: user.graduationYear,
 				educationalQualification: user.educationalQualification,
+				teacherRating,
 			};
 		}
 
@@ -81,7 +120,7 @@ exports.getCurrentUser = AsyncHandler(async (req, res) => {
 		};
 	};
 
-	const responseData = buildResponse(user);
+	const responseData = await buildResponse(user);
 	return res.status(200).json({ data: responseData });
 });
 

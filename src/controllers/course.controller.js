@@ -1,4 +1,5 @@
 const AsyncHandler = require('express-async-handler');
+const { Sequelize } = require('sequelize');
 const {
 	Course,
 	Section,
@@ -13,6 +14,7 @@ const {
 	Admin,
 	Quiz,
 	QuizAttempt,
+	Review,
 } = require('../models');
 const { deleteFilesFromCloudinary } = require('../services/multer.service');
 const deleteFiles = async (items) => {
@@ -254,7 +256,6 @@ exports.getCourseDetailsById = AsyncHandler(async (req, res) => {
 					model: Section,
 					as: 'sections',
 					attributes: ['id', 'title', 'createdAt'],
-
 					include: [
 						{
 							model: Lesson,
@@ -279,6 +280,17 @@ exports.getCourseDetailsById = AsyncHandler(async (req, res) => {
 					model: Level,
 					as: 'level',
 					attributes: ['title'],
+				},
+				{
+					model: Review,
+					as: 'reviews',
+					attributes: ['id', 'rate', 'comment', 'createdAt'],
+					include: [
+						{
+							model: Student,
+							attributes: ['id', 'firstName', 'lastName'],
+						},
+					],
 				},
 			],
 		});
@@ -319,6 +331,18 @@ exports.getCourseDetailsById = AsyncHandler(async (req, res) => {
 				})),
 		}));
 
+		// Prepare reviews
+		const reviews = course.reviews.map((review) => ({
+			id: review.id,
+			rating: review.rating,
+			comment: review.comment,
+			createdAt: review.createdAt,
+			student: {
+				id: review.student.id,
+				name: `${review.student.firstName} ${review.student.lastName}`,
+			},
+		}));
+
 		return res.status(200).json({
 			id: course.id,
 			title: course.title,
@@ -333,6 +357,7 @@ exports.getCourseDetailsById = AsyncHandler(async (req, res) => {
 			updatedAt: course.updatedAt,
 			lessonsCount,
 			sections: sectionsWithLessons,
+			reviews, // Include reviews in the response
 		});
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
@@ -586,7 +611,6 @@ exports.getTeacherSections = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json({ count: sections.length, data: sections });
 });
-
 exports.getAllCourses = AsyncHandler(async (req, res) => {
 	const courses = await Course.findAll({
 		where: {
@@ -603,11 +627,31 @@ exports.getAllCourses = AsyncHandler(async (req, res) => {
 				as: 'level',
 				attributes: ['title'],
 			},
+			{
+				model: Review,
+				as: 'reviews',
+				attributes: [],
+			},
 		],
+		attributes: {
+			include: [
+				[
+					Sequelize.fn('AVG', Sequelize.col('reviews.rate')),
+					'averageRating',
+				],
+				[
+					Sequelize.fn('COUNT', Sequelize.col('reviews.id')),
+					'totalReviews',
+				],
+			],
+		},
+		group: ['Course.id', 'teacher.id', 'level.id'],
 	});
+
 	if (!courses || courses.length === 0) {
 		return res.status(404).json({ message: 'لا يوجد دورات' });
 	}
+
 	const formattedCourses = courses.map((course) => ({
 		id: course.id,
 		title: course.title,
@@ -615,12 +659,17 @@ exports.getAllCourses = AsyncHandler(async (req, res) => {
 		price: course.price,
 		discountedPrice: course?.discountedPrice,
 		image: course.image,
-		teacherId: course.teacher.id,
+		teacherId: course.teacher?.id,
 		teacherName: course.teacher
 			? `${course.teacher.firstName} ${course.teacher.lastName}`
 			: 'No teacher assigned',
 		levelTitle: course.level?.title || 'No level assigned',
+		averageRating: course.dataValues.averageRating
+			? parseFloat(course.dataValues.averageRating).toFixed(2)
+			: 'No ratings yet',
+		totalReviews: course.dataValues.totalReviews || 0,
 	}));
+
 	return res
 		.status(200)
 		.json({ count: formattedCourses.length, data: formattedCourses });
