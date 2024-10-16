@@ -380,7 +380,7 @@ exports.getSectionsForCourse = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json({ count: sections.length, data: sections });
 });
-exports.getSectionsForCourseById = AsyncHandler(async (req, res) => {
+exports.getSectionForCourseById = AsyncHandler(async (req, res) => {
 	const { sectionId } = req.params;
 
 	const section = await Section.findOne({

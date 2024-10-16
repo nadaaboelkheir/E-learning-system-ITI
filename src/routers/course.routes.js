@@ -14,7 +14,7 @@ const {
 	deleteLesson,
 	deleteSection,
 	getSectionsForCourse,
-	getSectionsForCourseById,
+	getSectionForCourseById,
 	createLesson,
 	updateLesson,
 } = require('../controllers/course.controller');
@@ -63,7 +63,7 @@ teacherCourseRouter.delete(
 teacherCourseRouter.get(
 	'/section/:sectionId',
 	protectRoute,
-	getSectionsForCourseById,
+	getSectionForCourseById,
 );
 
 teacherCourseRouter.delete(

@@ -11,7 +11,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { sendVerificationEmail, generateOtp } = require('../utils/mailer');
 const { generateTokenAndSetCookie } = require('../utils/generateToken');
-const { Op } = require('sequelize');
 const { activeDeviceLimit } = require('../utils/helperFunctions');
 const AsyncHandler = require('express-async-handler');
 
@@ -34,13 +33,13 @@ exports.registerStudent = AsyncHandler(async (req, res) => {
 		return res.status(404).json({ message: 'المستوى غير موجود' });
 	}
 
-	const existingStudent = await Student.findOne({
-		where: {
-			[Op.or]: [{ email }, { nationalID }],
-		},
+	const existingTeacher = await Teacher.findOne({
+		where: { email },
 	});
-
-	if (existingStudent) {
+	const existStudent = await Student.findOne({
+		where: { email },
+	});
+	if (existingTeacher || existStudent) {
 		return res.status(400).json({ message: 'المستخدم موجود بالفعل' });
 	}
 
