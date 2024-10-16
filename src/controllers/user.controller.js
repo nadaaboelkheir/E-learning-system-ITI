@@ -390,3 +390,43 @@ exports.resetPasswordToken = AsyncHandler(async (req, res) => {
 	clearTemporaryData(token);
 	return res.status(200).json({ message: 'تم تغيير كلمة المرور بنجاح' });
 });
+exports.getTeachers = AsyncHandler(async (req, res) => {
+	const { page = 1, limit = 10 } = req.query;
+	const offset = (page - 1) * limit;
+
+	const teachers = await Teacher.findAndCountAll({
+		where: { isEmailVerified: true },
+		limit: parseInt(limit),
+		offset,
+		attributes: [
+			'id',
+			'firstName',
+			'lastName',
+			'picture',
+			'specialization',
+		],
+		include: {
+			model: Course,
+			as: 'courses',
+			attributes: ['id', 'title'],
+			include: {
+				model: Level,
+				as: 'level',
+				attributes: ['id', 'title'],
+			},
+		},
+	});
+
+	if (teachers.length === 0) {
+		return res.status(404).json({ message: 'لا يوجد مدرسين' });
+	}
+
+	const totalPages = Math.ceil(teachers.count / limit);
+
+	res.status(200).json({
+		currentPage: page,
+		totalPages,
+		totalTeachers: teachers.count,
+		teachers: teachers.rows,
+	});
+});

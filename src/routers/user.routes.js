@@ -8,6 +8,7 @@ const {
 	forgetPassword,
 	resetPasswordToken,
 	deleteUser,
+	getTeachers,
 } = require('../controllers/user.controller');
 const { protectRoute } = require('../middlewares/auth.mw');
 const { userAuthRouter } = require('./auth.routes');
@@ -24,6 +25,7 @@ router.use('/events', userEventRouter);
 router.use('/levels', userLevelRouter);
 router.use('/review', userReviewsRouter);
 router.get('/current', protectRoute, getCurrentUser);
+router.get('/teachers', getTeachers);
 router.get('/:userId', getUserById);
 router.get('/', getAllUsers);
 router.patch('/profile', uploadSingleImage, protectRoute, updateUserProfile);
