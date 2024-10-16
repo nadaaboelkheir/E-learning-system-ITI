@@ -1,13 +1,15 @@
 const jwt = require('jsonwebtoken');
 const { Admin, Student, Teacher } = require('../models');
 const { JWT_SECRET, JWT_REFRESH_SECRET, NODE_ENV } = require('../utils/env');
+const ACCESS_TOKEN_EXPIRATION = '1d';
+const REFRESH_TOKEN_EXPIRATION = '7d';
 
 exports.generateTokenAndSetCookie = async (userId, role, res) => {
 	const accessToken = jwt.sign({ id: userId, role }, JWT_SECRET, {
-		expiresIn: '1h',
+		expiresIn: ACCESS_TOKEN_EXPIRATION,
 	});
-	const refreshToken = jwt.sign({ id: userId }, JWT_REFRESH_SECRET, {
-		expiresIn: '7d',
+	const refreshToken = jwt.sign({ id: userId, role }, JWT_REFRESH_SECRET, {
+		expiresIn: REFRESH_TOKEN_EXPIRATION,
 	});
 
 	let user;
@@ -51,7 +53,6 @@ exports.refreshAccessToken = async (req, res) => {
 		const userId = decoded.id;
 		const role = decoded.role;
 
-		// Find the user by ID and role, check if the stored refresh token matches
 		let user;
 		if (role === 'admin') {
 			user = await Admin.findOne({ where: { id: userId } });
@@ -65,12 +66,11 @@ exports.refreshAccessToken = async (req, res) => {
 			return res.status(403).json({ message: 'Invalid refresh token.' });
 		}
 
-		// Generate new access token
 		const newAccessToken = jwt.sign(
 			{ id: decoded.id, role: decoded.role },
 			JWT_SECRET,
 			{
-				expiresIn: '1h',
+				expiresIn: ACCESS_TOKEN_EXPIRATION,
 			},
 		);
 
@@ -78,7 +78,7 @@ exports.refreshAccessToken = async (req, res) => {
 			httpOnly: true,
 			secure: NODE_ENV !== 'development',
 			sameSite: 'strict',
-			maxAge: 1 * 60 * 60 * 1000, // 1 hour
+			maxAge: 60 * 60 * 1000,
 		});
 
 		res.status(200).json({

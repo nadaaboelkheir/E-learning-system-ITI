@@ -1,5 +1,14 @@
 const { Level, Student, Teacher, Course } = require('../models');
-const { sendVerificationEmail } = require('../utils/mailer');
+const {
+	sendApprovalEmailToTeacher,
+	sendRefuseEmailToTeacher,
+	approveTeacherHtml,
+	declineTeacherHtml,
+	sendApprovalCourseToTeacher,
+	approveCourseHtml,
+	sendRefuseCourseToTeacher,
+	declineCourseHtml,
+} = require('../utils/mailer');
 const AsyncHandler = require('express-async-handler');
 const { deleteFilesFromCloudinary } = require('../services/multer.service');
 
@@ -15,9 +24,11 @@ exports.adminVerifyTeacher = AsyncHandler(async (req, res) => {
 	}
 	await teacher.update({ isEmailVerified: true });
 	const subject = 'تم التحقق من حسابك';
-	const text =
-		'مبروك! تم تفعيل حسابك من قبل الإدارة. يمكنك الآن تسجيل الدخول.';
-	await sendVerificationEmail(teacher.email, subject, text);
+	await sendApprovalEmailToTeacher(
+		teacher.email,
+		subject,
+		approveTeacherHtml,
+	);
 	return res.status(200).json({ message: 'تم تفعيل المدرس بنجاح' });
 });
 
@@ -32,11 +43,8 @@ exports.adminDeletePendingTeacher = AsyncHandler(async (req, res) => {
 		return res.status(404).json({ message: 'المدرس غير موجود' });
 	}
 	await teacher.destroy();
-	sendVerificationEmail(
-		teacher.email,
-		'تم حذف حسابك',
-		'تم حذف حسابك من قبل الإدارة',
-	);
+	const subject = 'لم يتم الموافقة علي طلبك';
+	await sendRefuseEmailToTeacher(teacher.email, subject, declineTeacherHtml);
 	return res.status(200).json({ message: 'تم حذف المدرس بنجاح' });
 });
 
@@ -59,8 +67,7 @@ exports.adminVerifyCourse = AsyncHandler(async (req, res) => {
 
 	const teacherEmail = course.teacher.email;
 	const subject = 'تم الموافقة على دورتك';
-	const text = `مبروك! تم تفعيل دورتك "${course.title}" من قبل الإدارة. يمكنك الآن الوصول إليها.`;
-	await sendVerificationEmail(teacherEmail, subject, text);
+	await sendApprovalCourseToTeacher(teacherEmail, subject, approveCourseHtml);
 
 	return res.status(200).json({ message: 'تم تفعيل الدورة بنجاح' });
 });
@@ -195,8 +202,7 @@ exports.deletePendingCourse = AsyncHandler(async (req, res) => {
 
 	const teacherEmail = course.teacher.email;
 	const subject = 'تم حذف دورتك';
-	const text = `عزيزي المعلم،\n\nنأسف لإبلاغك أن دورتك "${course.title}" قد تم حذفها بسبب عدم تحققها. إذا كان لديك أي استفسارات، يرجى الاتصال بالإدارة.\n\nشكرًا لتفهمك.`;
-	await sendVerificationEmail(teacherEmail, subject, text);
+	await sendRefuseCourseToTeacher(teacherEmail, subject, declineCourseHtml);
 
 	if (course.image) {
 		await deleteFilesFromCloudinary('images', imageUrl, 'image');

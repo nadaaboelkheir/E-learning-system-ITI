@@ -8,6 +8,7 @@ const {
 	Enrollment,
 	Course,
 	Teacher,
+	Section,
 } = require('../models');
 const AsyncHandler = require('express-async-handler');
 
@@ -135,7 +136,24 @@ exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 		include: [
 			{
 				model: Quiz,
-				attributes: ['title', 'Duration'],
+				attributes: ['title', 'Duration', 'createdAt'],
+				include: [
+					{
+						model: Section,
+						include: [
+							{
+								model: Course,
+								as: 'course',
+								attributes: ['id', 'title'],
+							},
+						],
+					},
+					{
+						model: Teacher,
+						as: 'teacher',
+						attributes: ['id', 'firstName', 'lastName'],
+					},
+				],
 			},
 		],
 	});
@@ -150,6 +168,12 @@ exports.getStudentQuizzes = AsyncHandler(async (req, res) => {
 			duration: attempt.Quiz.Duration,
 			score: attempt.score,
 			maxScore: attempt.maxScore,
+			createdAt: attempt.Quiz.createdAt,
+			section: attempt.Quiz.Section.course.title,
+			teacher: `${attempt.Quiz.teacher.firstName} ${attempt.Quiz.teacher.lastName}`,
+			quizId: attempt.Quiz.id,
+			courseId: attempt.Quiz.Section.course.id,
+			courseTitle: attempt.Quiz.Section.course.title,
 		})),
 	});
 });

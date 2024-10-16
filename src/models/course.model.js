@@ -48,6 +48,20 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		{
 			timestamps: true,
+			hooks: {
+				beforeDestroy: async (course, options) => {
+					const enrollments = await sequelize.models.Enrollment.count(
+						{
+							where: {
+								courseId: course.id,
+							},
+						},
+					);
+					if (enrollments > 0) {
+						throw new Error('لا يمكن حذف دورة مشترك بها طلاب');
+					}
+				},
+			},
 		},
 	);
 
