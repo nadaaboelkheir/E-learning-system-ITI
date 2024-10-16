@@ -1,6 +1,5 @@
 const AsyncHandler = require('express-async-handler');
-const { Student, QuizAttempt, Wallet, Enrollment } = require('../models');
-const { Sequelize } = require('sequelize');
+const { Student, QuizAttempt, Course, Quiz } = require('../models');
 
 exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
@@ -18,14 +17,12 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 	});
 
 	if (!quizAttempts || quizAttempts.length === 0) {
-		return res
-			.status(404)
-			.json({
-				message: 'لا توجد اختبارات من قبلك',
-				totalScore,
-				maxScore,
-				grade,
-			});
+		return res.status(404).json({
+			message: 'لا توجد اختبارات من قبلك',
+			totalScore,
+			maxScore,
+			grade,
+		});
 	}
 
 	quizAttempts.forEach((attempt) => {
@@ -68,25 +65,19 @@ exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 		},
 		include: [
 			{
-				model: Wallet,
-				as: 'wallet',
-				attributes: ['balance'],
+				model: Course,
+				as: 'courses',
 			},
 			{
-				model: Enrollment,
-				as: 'enrollments',
-				attributes: [],
+				model: QuizAttempt,
+				as: 'quizAttempts',
+				include: [
+					{
+						model: Quiz,
+					},
+				],
 			},
 		],
-		attributes: {
-			include: [
-				[
-					Sequelize.fn('COUNT', Sequelize.col('enrollments.id')),
-					'enrollmentCount',
-				],
-			],
-		},
-		group: ['Student.id', 'wallet.id'],
 	});
 
 	if (!students.length) {

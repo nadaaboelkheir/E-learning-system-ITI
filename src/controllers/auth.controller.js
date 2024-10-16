@@ -9,7 +9,10 @@ const {
 const { JWT_SECRET } = require('../utils/env');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { sendVerificationEmail, generateOtp } = require('../utils/mailer');
+const {
+	generateOtp,
+	sendVerificationEmailToStudent,
+} = require('../utils/mailer');
 const { generateTokenAndSetCookie } = require('../utils/generateToken');
 const { Op } = require('sequelize');
 const { activeDeviceLimit } = require('../utils/helperFunctions');
@@ -67,11 +70,7 @@ exports.registerStudent = AsyncHandler(async (req, res) => {
 
 	await newStudent.update({ walletId: wallet.id });
 
-	await sendVerificationEmail(
-		email,
-		'Your OTP for verification',
-		`Your OTP is ${otp}. It will expire in 2 minutes.`,
-	);
+	await sendVerificationEmailToStudent(email, 'Email Verification', otp);
 
 	req.session.otp = otp;
 	req.session.otpExpiry = otpExpiry;
@@ -111,15 +110,6 @@ exports.verifyOtp = AsyncHandler(async (req, res) => {
 
 	if (String(otp) === String(sessionOtp)) {
 		await Student.update({ isEmailVerified: true }, { where: { email } });
-		req.session.otp = null;
-		req.session.otpExpiry = null;
-		req.session.email = null;
-		req.session.destroy((err) => {
-			if (err) {
-				return res.status(500).json({ message: 'حدث خطأ ما' });
-			}
-		});
-
 		return res
 			.status(200)
 			.json({ message: 'تم التحقق من بريدك الالكتروني بنجاح' });
@@ -144,16 +134,16 @@ exports.resendOtp = AsyncHandler(async (req, res) => {
 		return res.status(400).json({ message: 'المستخدم غير موجود' });
 	}
 
-	const newOtp = generateOtp();
+	const otp = generateOtp();
 	const newOtpExpiry = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
 
-	req.session.otp = newOtp;
+	req.session.otp = otp;
 	req.session.otpExpiry = newOtpExpiry;
 
-	await sendVerificationEmail(
+	await sendVerificationEmailToStudent(
 		email,
-		'Your OTP for verification (Resent)',
-		`Your new OTP is ${newOtp}. It will expire in 2 minutes.`,
+		'Email Verification (Resent)',
+		otp,
 	);
 
 	return res.status(200).json({

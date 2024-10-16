@@ -334,13 +334,15 @@ exports.getCourseDetailsById = AsyncHandler(async (req, res) => {
 		// Prepare reviews
 		const reviews = course.reviews.map((review) => ({
 			id: review.id,
-			rating: review.rating,
+			rate: review.rate,
 			comment: review.comment,
 			createdAt: review.createdAt,
-			student: {
-				id: review.student.id,
-				name: `${review.student.firstName} ${review.student.lastName}`,
-			},
+			student: review.Student
+				? {
+						id: review.Student.id,
+						name: `${review.Student.firstName} ${review.Student.lastName}`,
+					}
+				: null,
 		}));
 
 		return res.status(200).json({
@@ -351,13 +353,14 @@ exports.getCourseDetailsById = AsyncHandler(async (req, res) => {
 			levelId: course.levelId,
 			levelTitle,
 			teacherId,
-			teacherName: `${firstName} ${lastName}`,
+			teacherName: teacherId ? `${firstName} ${lastName}` : null,
 			price: course.price,
+			discountedPrice: course.discountedPrice,
 			createdAt: course.createdAt,
 			updatedAt: course.updatedAt,
 			lessonsCount,
 			sections: sectionsWithLessons,
-			reviews, // Include reviews in the response
+			reviews,
 		});
 	} catch (error) {
 		return res.status(500).json({ error: error.message });
