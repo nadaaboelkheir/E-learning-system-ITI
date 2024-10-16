@@ -34,7 +34,7 @@ exports.createLevelWithSubLevels = AsyncHandler(async (req, res) => {
 
 exports.getAllLevels = AsyncHandler(async (req, res) => {
 	const levels = await Level.findAll({
-		attributes: ['id', 'title'],
+		attributes: ['id', 'title', 'createdAt', 'updatedAt'],
 		where: {
 			parentLevelId: null,
 		},
@@ -42,7 +42,7 @@ exports.getAllLevels = AsyncHandler(async (req, res) => {
 			{
 				model: Level,
 				as: 'subLevels',
-				attributes: ['id', 'title'],
+				attributes: ['id', 'title', 'createdAt', 'updatedAt'],
 				include: [
 					{
 						model: Course,
@@ -52,10 +52,22 @@ exports.getAllLevels = AsyncHandler(async (req, res) => {
 				],
 			},
 		],
+		order: [
+			['title', 'ASC'],
+			[{ model: Level, as: 'subLevels' }, 'title', 'ASC'],
+			[
+				{ model: Level, as: 'subLevels' },
+				{ model: Course, as: 'courses' },
+				'title',
+				'ASC',
+			],
+		],
 	});
+
 	if (!levels || levels.length === 0) {
 		return res.status(404).json({ error: 'لا يوجد مستويات' });
 	}
+
 	res.status(200).json({ count: levels.length, data: levels });
 });
 

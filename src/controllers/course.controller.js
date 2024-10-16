@@ -624,7 +624,7 @@ exports.getAllCourses = AsyncHandler(async (req, res) => {
 			{
 				model: Level,
 				as: 'level',
-				attributes: ['title'],
+				attributes: ['title', 'id'],
 			},
 			{
 				model: Review,
@@ -663,6 +663,7 @@ exports.getAllCourses = AsyncHandler(async (req, res) => {
 			? `${course.teacher.firstName} ${course.teacher.lastName}`
 			: 'No teacher assigned',
 		levelTitle: course.level?.title || 'No level assigned',
+		levelId: course.level?.id || 'No level assigned',
 		averageRating: course.dataValues.averageRating
 			? parseFloat(course.dataValues.averageRating).toFixed(2)
 			: 'No ratings yet',
