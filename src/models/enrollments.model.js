@@ -43,6 +43,7 @@ module.exports = (sequelize, DataTypes) => {
 			foreignKey: 'studentId',
 			onDelete: 'CASCADE',
 			onUpdate: 'CASCADE',
+			as: 'enrollments',
 		});
 
 		Enrollment.belongsTo(models.Course, {

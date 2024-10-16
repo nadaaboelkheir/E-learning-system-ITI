@@ -2,7 +2,6 @@ const express = require('express');
 const {
 	getStudentsForParent,
 	calculateStudentEvaluation,
-	getStudentByNationalId,
 } = require('../controllers/student.controller');
 const { studentAuthRouter } = require('./auth.routes');
 const walletRoutes = require('./wallet.routes');
@@ -17,7 +16,6 @@ router.use('/course', studentCoursesRouter);
 router.use('/review', studentReviewsRouter);
 router.get('/evaluation/:studentId', calculateStudentEvaluation);
 
-router.get('/nationalId/:nationalId', getStudentByNationalId);
 router.get('/students-for-parent/:parentPhoneNumber', getStudentsForParent);
 
 module.exports = router;

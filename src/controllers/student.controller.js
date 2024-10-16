@@ -1,5 +1,6 @@
 const AsyncHandler = require('express-async-handler');
-const { Student, QuizAttempt } = require('../models');
+const { Student, QuizAttempt, Wallet, Enrollment } = require('../models');
+const { Sequelize } = require('sequelize');
 
 exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 	const { studentId } = req.params;
@@ -8,17 +9,24 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 	if (!student) {
 		return res.status(404).json({ message: 'الطالب غير موجود' });
 	}
+	let totalScore = 0;
+	let maxScore = 0;
+	let grade = 'F';
 
 	const quizAttempts = await QuizAttempt.findAll({
 		where: { studentId },
 	});
 
 	if (!quizAttempts || quizAttempts.length === 0) {
-		return res.status(404).json({ message: 'لا توجد اختبارات من قبلك' });
+		return res
+			.status(404)
+			.json({
+				message: 'لا توجد اختبارات من قبلك',
+				totalScore,
+				maxScore,
+				grade,
+			});
 	}
-
-	let totalScore = 0;
-	let maxScore = 0;
 
 	quizAttempts.forEach((attempt) => {
 		totalScore += attempt.score;
@@ -27,7 +35,6 @@ exports.calculateStudentEvaluation = AsyncHandler(async (req, res) => {
 
 	const percentage = (totalScore / maxScore) * 100;
 
-	let grade = 'F';
 	if (percentage >= 90) {
 		grade = 'A';
 	} else if (percentage >= 80) {
@@ -54,26 +61,37 @@ exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 			.status(400)
 			.json({ message: 'رقم هاتف ولي الأمر غير موجود' });
 	}
+
 	const students = await Student.findAll({
 		where: {
 			parentPhoneNumber: parentPhoneNumber,
 		},
+		include: [
+			{
+				model: Wallet,
+				as: 'wallet',
+				attributes: ['balance'],
+			},
+			{
+				model: Enrollment,
+				as: 'enrollments',
+				attributes: [],
+			},
+		],
+		attributes: {
+			include: [
+				[
+					Sequelize.fn('COUNT', Sequelize.col('enrollments.id')),
+					'enrollmentCount',
+				],
+			],
+		},
+		group: ['Student.id', 'wallet.id'],
 	});
+
 	if (!students.length) {
 		return res.status(404).json({ message: 'لا يوجد طلاب لهذا الرقم' });
 	}
 
 	return res.status(200).json({ students });
-});
-
-exports.getStudentByNationalId = AsyncHandler(async (req, res) => {
-	const { nationalId } = req.params;
-
-	const student = await Student.findOne({ where: { nationalId } });
-	if (student) {
-		const { password, createdAt, updatedAt, refreshToken, ...safeStudent } =
-			student.dataValues;
-		return res.status(200).json(safeStudent);
-	}
-	return res.status(404).json({ message: 'هذا الطالب غير موجود' });
 });
