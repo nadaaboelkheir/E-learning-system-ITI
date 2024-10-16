@@ -63,6 +63,7 @@ exports.getStudentsForParent = AsyncHandler(async (req, res) => {
 		where: {
 			parentPhoneNumber: parentPhoneNumber,
 		},
+		attributes: ['id', 'firstName', 'lastName', 'phoneNumber'],
 		include: [
 			{
 				model: Course,
