@@ -507,7 +507,7 @@ exports.updateLesson = AsyncHandler(async (req, res) => {
 });
 
 exports.getTeacherCourses = AsyncHandler(async (req, res) => {
-	const teacherId = req.params.teacherId;
+	const teacherId = req.params.teacherId || req.teacher.id;
 
 	const teacher = await Teacher.findOne({
 		where: { id: teacherId },
@@ -566,13 +566,6 @@ exports.getTeacherCourses = AsyncHandler(async (req, res) => {
 });
 
 exports.getTeacherSections = AsyncHandler(async (req, res) => {
-	if (req.role !== 'teacher') {
-		return res.status(401).json({ message: 'لا يمكنك الوصول لهذة الصفحة' });
-	}
-
-	if (!req.teacher.isEmailVerified) {
-		return res.status(401).json({ message: 'البريد الالكتروني غير مفعل' });
-	}
 	const teacherId = req.teacher.id;
 
 	const courses = await Course.findAll({

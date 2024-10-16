@@ -95,9 +95,18 @@ teacherCourseRouter.patch(
 );
 
 const userCourseRouter = express.Router();
-userCourseRouter.get('/teacher-courses/:teacherId', getTeacherCourses);
-userCourseRouter.get('/teacher-sections', protectRoute, getTeacherSections);
-// userCourseRouter.get('/teacher/courses/:teacherId', protectRoute, authorizeTeacher, getTeacherCourses);
+userCourseRouter.get(
+	'/teacher-courses/:teacherId?',
+	protectRoute,
+	authorizeTeacher,
+	getTeacherCourses,
+);
+userCourseRouter.get(
+	'/teacher-sections',
+	protectRoute,
+	authorizeTeacher,
+	getTeacherSections,
+);
 userCourseRouter.get('/details/:courseId', getCourseDetailsById);
 userCourseRouter.get('/all-courses', getAllCourses);
 
