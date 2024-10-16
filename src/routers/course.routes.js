@@ -74,7 +74,7 @@ const userCourseRouter = express.Router();
 userCourseRouter.get('/teacher-courses/:teacherId', getTeacherCourses);
 userCourseRouter.get('/teacher-sections', protectRoute, getTeacherSections);
 userCourseRouter.get('/teacher/courses', protectRoute, getTeacherCourses);
-userCourseRouter.get('/details/:id', getCourseDetails);
+userCourseRouter.get('/details/:courseId', getCourseDetails);
 userCourseRouter.get('/all-courses', getAllCourses);
 const adminCourseRouter = express.Router();
 adminCourseRouter.get('/students-in-course/:courseId', getStudentsInCourse);

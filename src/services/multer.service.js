@@ -11,10 +11,20 @@ const createStorage = (folderName) => {
 			const uniqueId = uuidv4();
 			const fileName = file.originalname.split('.')[0];
 
+			let resourceType = 'auto';
+
+			if (file.fieldname === 'pdfFile') {
+				resourceType = 'raw';
+			} else if (file.fieldname === 'videoFile') {
+				resourceType = 'video';
+			} else if (file.fieldname === 'image') {
+				resourceType = 'image';
+			}
+
 			return {
 				folder: `${folderName}`,
 				public_id: `${fileName}-${uniqueId}`,
-				resource_type: 'auto',
+				resource_type: resourceType,
 			};
 		},
 	});
@@ -23,9 +33,7 @@ const createStorage = (folderName) => {
 const fileFilter = (req, file, cb) => {
 	const fileExtension = path.extname(file.originalname).toLowerCase();
 
-	// Validate based on field name
 	if (file.fieldname === 'pdfFile') {
-		// Only allow PDF for pdfFile field
 		if (fileExtension === '.pdf') {
 			cb(null, true);
 		} else {
@@ -36,7 +44,6 @@ const fileFilter = (req, file, cb) => {
 			);
 		}
 	} else if (file.fieldname === 'videoFile') {
-		// Only allow video extensions for videoFile field
 		const allowedVideoExtensions = ['.mp4', '.mov', '.avi', '.mkv'];
 		if (allowedVideoExtensions.includes(fileExtension)) {
 			cb(null, true);
@@ -48,7 +55,6 @@ const fileFilter = (req, file, cb) => {
 			);
 		}
 	} else if (file.fieldname === 'image') {
-		// Only allow image extensions for imageFile field
 		const allowedImageExtensions = ['.jpg', '.jpeg', '.png'];
 		if (allowedImageExtensions.includes(fileExtension)) {
 			cb(null, true);
@@ -108,24 +114,24 @@ exports.uploadFiles = multer({
 //   });
 // };
 
-exports.deleteFilesFromCloudinary = async (
-	folder,
-	fileUrl,
-	resourceType = 'auto',
-) => {
+exports.deleteFilesFromCloudinary = async (folder, fileUrl, resourceType) => {
 	try {
-		const publicId = fileUrl.split('/').pop().split('.')[0];
+		const decodedUrl = decodeURIComponent(fileUrl);
+		const publicId = decodedUrl.split('/').pop().split('.')[0];
 
-		await cloudinary.uploader.destroy(`${folder}/${publicId}`, {
-			resource_type: resourceType,
-		});
+		// console.log(`Attempting to delete file with public ID: ${folder}/${publicId}, resource_type: ${resourceType}`);
 
-		console.log(
-			`File with public ID: ${publicId} deleted successfully from Cloudinary.`,
+		const result = await cloudinary.uploader.destroy(
+			`${folder}/${publicId}`,
+			{
+				resource_type: resourceType,
+			},
 		);
-		return true;
+
+		// console.log(`File with public ID: ${publicId} deleted successfully from Cloudinary.`, result);
+		return result;
 	} catch (error) {
-		console.error('Error deleting file from Cloudinary:', error);
+		// console.error('Error deleting file from Cloudinary:', error);
 		throw new Error('Failed to delete file from Cloudinary');
 	}
 };
