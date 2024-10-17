@@ -20,7 +20,9 @@ app.use(cookieParser());
 app.use(limiter);
 app.use(
 	cors({
-		origin: ['http://localhost:5173', 'http://localhost:3001'],
+		origin: [
+			'https://iti-gp-client-94jjl67ja-h0ssamahmeds-projects.vercel.app/',
+		],
 		credentials: true,
 	}),
 );
