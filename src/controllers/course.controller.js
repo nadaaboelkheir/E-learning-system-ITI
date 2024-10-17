@@ -834,8 +834,8 @@ exports.getStudentEnrolledCourses = AsyncHandler(async (req, res) => {
 
 exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
 	const { courseId } = req.params;
-
 	const studentId = req.student.id;
+
 	const enrollment = await Enrollment.findOne({
 		where: {
 			studentId: studentId,
@@ -849,14 +849,24 @@ exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
 			.json({ message: 'هذا الطالب ليس مشترك في هذه الدورة' });
 	}
 
-	const quizzes = await Quiz.findAll({
+	const sections = await Section.findAll({
 		where: { courseId: courseId },
+		attributes: ['id'],
+	});
+
+	if (sections.length === 0) {
+		return res.status(404).json({ message: 'لا توجد أقسام لهذه الدورة' });
+	}
+
+	const sectionIds = sections.map((section) => section.id);
+	const quizzes = await Quiz.findAll({
+		where: { sectionId: sectionIds },
 	});
 
 	if (quizzes.length === 0) {
 		return res
 			.status(404)
-			.json({ message: 'لا توجد اختبارات متاحة لهذة الدورة' });
+			.json({ message: 'لا توجد اختبارات متاحة لهذه الدورة' });
 	}
 
 	let totalGrade = 0;
@@ -878,6 +888,8 @@ exports.getCertificateForCourse = AsyncHandler(async (req, res) => {
 
 	return res.status(200).json({
 		message: 'تمت العملية بنجاح',
+		firstName: req.student.firstName,
+		lastName: req.student.lastName,
 		totalGrade,
 		averageGrade: totalGrade / quizzes.length,
 	});
